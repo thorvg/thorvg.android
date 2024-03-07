@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lottie xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:rawRes="@raw/swinging"
+    android:width="100dp"
+    android:height="100dp"
+    android:repeatCount="5" />

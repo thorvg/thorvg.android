@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <declare-styleable name="LottieAnimationView">
+        <attr name="lottieDrawable" format="reference" />
+    </declare-styleable>
+
+    <!-- Drawable used to render a geometric shape, with a gradient or a solid color. -->
+    <declare-styleable name="LottieDrawable">
+        <attr name="android:width" />
+        <attr name="android:height" />
+        <attr name="rawRes" format="reference" />
+        <!-- Defines how many times the animation should repeat. The default value is 0. -->
+        <attr name="android:repeatCount" />
+        <!-- Defines the animation behavior when it reaches the end and the repeat count is
+             greater than 0 or infinite. The default value is restart. -->
+        <attr name="android:repeatMode" />
+        <attr name="speed" format="float" />
+        <!-- When true, automatically start animating. The default is false, meaning
+             that the animation will not start until start() is called. -->
+        <attr name="android:autoStart" />
+        <attr name="frameFrom" format="integer" />
+        <attr name="frameTo" format="integer" />
+    </declare-styleable>
+</resources>
