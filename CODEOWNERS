@@ -1,0 +1,5 @@
+# ThorVG uses the CODEOWNERS file to automatically assign reviewers in the GitHub system. 
+# However, the presence of a CODEOWNER does not necessarily imply that they are the sole copyright owners of the code. 
+# For more information, please consult the AUTHORS file.
+
+* @ol-of @hermet
