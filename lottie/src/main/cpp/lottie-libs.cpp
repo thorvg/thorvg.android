@@ -4,7 +4,8 @@
 #include "LottieData.h"
 
 using namespace std;
-extern "C" JNIEXPORT jlong JNICALL
+
+extern "C" jlong
 Java_org_thorvg_lottie_LottieDrawable_nCreateLottie(JNIEnv *env, jclass clazz,
         jstring content, jint length, jintArray out_values) {
     if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
@@ -25,7 +26,7 @@ Java_org_thorvg_lottie_LottieDrawable_nCreateLottie(JNIEnv *env, jclass clazz,
     return reinterpret_cast<jlong>(newData);
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" void
 Java_org_thorvg_lottie_LottieDrawable_nDestroyLottie(JNIEnv* env, jclass clazz, jlong lottie_ptr) {
     tvg::Initializer::term(tvg::CanvasEngine::Sw);
 
@@ -37,7 +38,7 @@ Java_org_thorvg_lottie_LottieDrawable_nDestroyLottie(JNIEnv* env, jclass clazz, 
     delete data;
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" void
 Java_org_thorvg_lottie_LottieDrawable_nSetLottieBufferSize(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jfloat width, jfloat height) {
     if (lottie_ptr == 0) {
@@ -52,7 +53,7 @@ Java_org_thorvg_lottie_LottieDrawable_nSetLottieBufferSize(JNIEnv* env, jclass c
     }
 }
 
-extern "C" JNIEXPORT void JNICALL
+extern "C" void
 Java_org_thorvg_lottie_LottieDrawable_nDrawLottieFrame(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jint frame) {
     if (lottie_ptr == 0) {
