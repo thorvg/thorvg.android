@@ -12,7 +12,7 @@ Please ensure that you have installed the [Android SDK](https://developer.androi
 ```
 $git clone https://github.com/thorvg/thorvg.android.git
 $cd thorvg.android
-$git submodule init --resursive
+$git submodule update --init --recursive
 ```
 Please refer to [ThorVG](https://github.com/thorvg/thorvg) for detailed information on setting up the ThorVG build environment.
 <br />
