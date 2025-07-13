@@ -17,6 +17,49 @@ $git submodule init --resursive
 Please refer to [ThorVG](https://github.com/thorvg/thorvg) for detailed information on setting up the ThorVG build environment.
 <br />
 
+<details>
+    <summary><strong>SSH Key Setup (Optional)</strong></summary>
+<br />
+If you run into SSH authentication errors (e.g. Permission denied (publickey)), follow these steps to configure SSH cloning:
+
+1. Generate an SSH key (if you don't already have one):
+
+```bash
+# "t" stands for type of crytopgrahic algorithm
+ssh-keygen -t ed25519 -C "your_email@example.com"
+```
+
+2. Start the SSH agent and add your private key:
+
+```bash
+eval "$(ssh-agent -s)"
+ssh-add ~/.ssh/id_ed25519
+```
+
+3. Add your public key to GitHub:
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+4. Test your SSH connection:
+
+```bash
+ssh -T git@github.com
+```
+
+You should see:
+
+```bash
+Hi <your_github_username>! You've successfully authenticated, but GitHub does not provide shell access.
+```
+
+5. Sync and update submodules over SSH:
+```bash
+git submodule sync
+git submodule update --init --recursive
+```
+</details>
+
 ## ThorVG Cross-Build 
 
 Follow these steps to cross-build ThorVG Android library.
