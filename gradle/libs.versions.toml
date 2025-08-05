@@ -1,0 +1,43 @@
+[versions]
+# Android SDK versions
+compileSdk = "34"
+minSdk = "21"
+targetSdk = "34"
+
+# Build tools
+agp = "8.3.0"
+kotlin = "1.9.23"
+ndkVersion = "25.2.9519653"
+
+# AndroidX
+androidx-annotation = "1.7.1"
+androidx-core = "1.12.0"
+androidx-test-runner = "1.5.2"
+
+# Testing
+junit = "4.13.2"
+junit5 = "5.10.2"
+espresso = "3.5.1"
+
+# Build
+cmake = "3.22.1"
+
+[libraries]
+# AndroidX
+androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+
+# Testing
+androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
+junit = { module = "junit:junit", version.ref = "junit" }
+junit5-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
+junit5-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
+espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+
+[plugins]
+android-application = { id = "com.android.application", version.ref = "agp" }
+android-library = { id = "com.android.library", version.ref = "agp" }
+kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
+
+[bundles]
+testing = ["junit", "androidx-test-runner", "espresso-core"]
