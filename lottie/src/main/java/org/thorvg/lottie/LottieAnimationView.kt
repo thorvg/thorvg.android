@@ -1,161 +1,118 @@
-package org.thorvg.lottie;
+package org.thorvg.lottie
 
-import android.content.Context;
-import android.content.res.Resources;
-import android.content.res.TypedArray;
-import android.graphics.Canvas;
-import android.graphics.drawable.Drawable;
-import android.os.Parcelable;
-import android.util.AttributeSet;
-import android.view.View;
-import androidx.annotation.DrawableRes;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import org.thorvg.lottie.LottieDrawable.LottieAnimationListener;
+import android.content.Context
+import android.content.res.Resources
+import android.graphics.Canvas
+import android.graphics.drawable.Drawable
+import android.os.Parcelable
+import android.util.AttributeSet
+import android.view.View
+import androidx.annotation.DrawableRes
+import org.thorvg.lottie.LottieDrawable.LottieAnimationListener
 
-public class LottieAnimationView extends View {
+class LottieAnimationView @JvmOverloads constructor(
+    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0,
+    defStyleRes: Int = 0
+) : View(context, attrs, defStyleAttr, defStyleRes) {
+    private var drawable: LottieDrawable? = null
+    private var listener: LottieAnimationListener? = null
 
-    private LottieDrawable mDrawable;
-    private LottieAnimationListener mListener;
+    private var resId = Resources.ID_NULL
 
-    private int mResId = Resources.ID_NULL;
+    private var onAttached = false
 
-    private boolean mOnAttached = false;
-
-    public LottieAnimationView(Context context) {
-        this(context, null);
+    init {
+        val a = context.obtainStyledAttributes(
+            attrs, R.styleable.LottieAnimationView, defStyleAttr, defStyleRes
+        )
+        resId = a.getResourceId(R.styleable.LottieAnimationView_lottieDrawable, resId)
+        a.recycle()
     }
 
-    public LottieAnimationView(Context context, @Nullable AttributeSet attrs) {
-        this(context, attrs, 0);
-    }
+    fun setLottieDrawableResource(@DrawableRes resId: Int) {
+        if (this@LottieAnimationView.resId != resId) {
+            this@LottieAnimationView.resId = resId
 
-    public LottieAnimationView(Context context, @Nullable AttributeSet attrs, int defStyleAttr) {
-        this(context, attrs, defStyleAttr, 0);
-    }
+            drawable?.release()
 
-    public LottieAnimationView(Context context, @Nullable AttributeSet attrs, int defStyleAttr,
-            int defStyleRes) {
-        super(context, attrs, defStyleAttr, defStyleRes);
-
-        final TypedArray a = context.obtainStyledAttributes(
-                attrs, R.styleable.LottieAnimationView, defStyleAttr, defStyleRes);
-        mResId = a.getResourceId(R.styleable.LottieAnimationView_lottieDrawable, mResId);
-        a.recycle();
-    }
-
-    public void setLottieDrawableResource(@DrawableRes int resId) {
-        if (mResId != resId) {
-            mResId = resId;
-
-            if (mDrawable != null) {
-                mDrawable.release();
-            }
-
-            createLottieDrawable();
+            createLottieDrawable()
         }
     }
 
-    private void createLottieDrawable() {
-        if (mOnAttached && mResId != Resources.ID_NULL && mDrawable == null) {
-            mDrawable = LottieDrawable.create(getContext().getResources(), mResId);
-            if (mDrawable != null) {
-                mDrawable.setCallback(this);
-                mDrawable.setAnimationListener(mListener);
-                if (mDrawable.isAutoPlay()) {
-                    startAnimation();
-                }
+    private fun createLottieDrawable() {
+        if (onAttached && resId != Resources.ID_NULL && drawable == null) {
+            drawable = LottieDrawable.create(context.resources, resId)
+            drawable?.callback = this
+            drawable?.setAnimationListener(listener)
+            if (drawable?.isAutoPlay == true) {
+                startAnimation()
             }
         }
     }
 
-    public void setSize(int width, int height) {
-        if (mDrawable != null) {
-            mDrawable.setSize(width, height);
-        }
+    fun setSize(width: Int, height: Int) {
+        drawable?.setSize(width, height)
     }
 
-    public void startAnimation() {
-        if (mDrawable != null) {
-            mDrawable.start();
-        }
+    fun startAnimation() {
+        drawable?.start()
     }
 
-    public void stopAnimation() {
-        if (mDrawable != null) {
-            mDrawable.stop();
-        }
+    fun stopAnimation() {
+        drawable?.stop()
     }
 
-    public void pauseAnimation() {
-        if (mDrawable != null) {
-            mDrawable.pause();
-        }
+    fun pauseAnimation() {
+        drawable?.pause()
     }
 
-    public void resumeAnimation() {
-        if (mDrawable != null) {
-            mDrawable.resume();
-        }
+    fun resumeAnimation() {
+        drawable?.resume()
     }
 
-    @Override
-    protected void onMeasure(int widthMeasureSpec, int heightMeasureSpec) {
-        super.onMeasure(widthMeasureSpec, heightMeasureSpec);
+    override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
+        super.onMeasure(widthMeasureSpec, heightMeasureSpec)
 
-        if (mDrawable != null) {
-            mDrawable.setSize(getMeasuredWidth(), getMeasuredHeight());
-        }
+        drawable?.setSize(measuredWidth, measuredHeight)
     }
 
-    @Override
-    protected void onAttachedToWindow() {
-        mOnAttached = true;
+    override fun onAttachedToWindow() {
+        onAttached = true
 
-        super.onAttachedToWindow();
+        super.onAttachedToWindow()
 
-        createLottieDrawable();
+        createLottieDrawable()
     }
 
-    @Override
-    protected void onDetachedFromWindow() {
-        mOnAttached = false;
+    override fun onDetachedFromWindow() {
+        onAttached = false
 
-        super.onDetachedFromWindow();
+        super.onDetachedFromWindow()
 
-        if (mDrawable != null) {
-            mDrawable.release();
-            mDrawable = null;
-        }
+        drawable?.release()
+        drawable = null
     }
 
-    @Override
-    public void draw(Canvas canvas) {
-        super.draw(canvas);
+    override fun draw(canvas: Canvas) {
+        super.draw(canvas)
 
-        if (mDrawable != null) {
-            mDrawable.draw(canvas);
-        }
+        drawable?.draw(canvas)
     }
 
-    @Override
-    public void invalidateDrawable(@NonNull Drawable drawable) {
-        super.invalidateDrawable(drawable);
-        invalidate();
+    override fun invalidateDrawable(drawable: Drawable) {
+        super.invalidateDrawable(drawable)
+        invalidate()
     }
 
-    public void setAnimationListener(LottieAnimationListener listener) {
-        mListener = listener;
+    fun setAnimationListener(listener: LottieAnimationListener?) {
+        this@LottieAnimationView.listener = listener
     }
 
-    @Nullable
-    @Override
-    protected Parcelable onSaveInstanceState() {
-        return super.onSaveInstanceState();
+    override fun onSaveInstanceState(): Parcelable? {
+        return super.onSaveInstanceState()
     }
 
-    @Override
-    protected void onRestoreInstanceState(Parcelable state) {
-        super.onRestoreInstanceState(state);
+    override fun onRestoreInstanceState(state: Parcelable?) {
+        super.onRestoreInstanceState(state)
     }
 }

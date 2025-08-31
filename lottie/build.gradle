@@ -1,5 +1,6 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
 }
 
 android {
@@ -42,13 +43,16 @@ android {
         }
     }
     namespace 'org.thorvg.lottie'
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
 }
 
 dependencies {
     implementation libs.androidx.annotation
 }
 
-task setupCrossBuild {
+tasks.register('setupCrossBuild') {
     inputs.property("abi", "null")
 
     doLast {
