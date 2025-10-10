@@ -184,9 +184,9 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     /**
      * Defines what this animation should do when it reaches the end. This
      * setting is applied only when the repeat count is either greater than
-     * 0 or {@link #INFINITE}. Defaults to {@link #RESTART}.
+     * 0 or [INFINITE]. Defaults to [RESTART].
      *
-     * @param mode {@link #RESTART} or {@link #REVERSE}
+     * @param mode [RESTART] or [REVERSE]
      */
     fun setRepeatMode(@RepeatMode mode: Int) {
         lottieState.repeatMode = mode
@@ -195,7 +195,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     /**
      * Defines what this animation should do when it reaches the end.
      *
-     * @return either one of {@link #REVERSE} or {@link #RESTART}
+     * @return either one of [REVERSE] or [RESTART]
      */
     @get:RepeatMode
     val repeatMode: Int
