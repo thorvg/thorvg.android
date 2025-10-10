@@ -1,72 +1,44 @@
-package org.thorvg.lottie;
+package org.thorvg.lottie
 
-import static androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX;
+import android.annotation.SuppressLint
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.Bitmap.createBitmap
+import android.graphics.Canvas
+import android.graphics.ColorFilter
+import android.graphics.Paint
+import android.graphics.PixelFormat
+import android.graphics.drawable.Animatable
+import android.graphics.drawable.Drawable
+import android.os.Handler
+import android.os.Looper
+import android.util.AttributeSet
+import android.util.Log
+import android.util.Xml
+import androidx.annotation.DrawableRes
+import androidx.annotation.FloatRange
+import androidx.annotation.IntDef
+import androidx.annotation.RawRes
+import androidx.annotation.RestrictTo
+import androidx.annotation.RestrictTo.Scope.LIBRARY_GROUP_PREFIX
+import org.xmlpull.v1.XmlPullParser
+import org.xmlpull.v1.XmlPullParserException
+import java.io.BufferedReader
+import java.io.IOException
+import java.io.InputStreamReader
 
-import android.annotation.SuppressLint;
-import android.content.res.Resources;
-import android.content.res.TypedArray;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.ColorFilter;
-import android.graphics.Paint;
-import android.graphics.PixelFormat;
-import android.graphics.drawable.Animatable;
-import android.graphics.drawable.Drawable;
-import android.os.Handler;
-import android.os.Looper;
-import android.util.AttributeSet;
-import android.util.Log;
-import android.util.Xml;
-
-import androidx.annotation.DrawableRes;
-import androidx.annotation.FloatRange;
-import androidx.annotation.IntDef;
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-import androidx.annotation.RawRes;
-import androidx.annotation.RestrictTo;
-
-import java.io.BufferedReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-import org.xmlpull.v1.XmlPullParser;
-import org.xmlpull.v1.XmlPullParserException;
-
-public class LottieDrawable extends Drawable implements Animatable {
-    private static final String TAG = "LottieDrawable";
-
-    private static final int UNDEFINED_SIZE_IN_DIP = 50;
-
-    /**
-     * Repeat the animation indefinitely.
-     */
-    public static final int INFINITE = -1;
-    /**
-     * When the animation reaches the end and the repeat count is INFINTE_REPEAT
-     * or a positive value, the animation restarts from the beginning.
-     */
-    public static final int RESTART = 1;
-    /**
-     * When the animation reaches the end and the repeat count is INFINTE_REPEAT
-     * or a positive value, the animation plays backward (and then forward again).
-     */
-    public static final int REVERSE = 2;
-
+class LottieDrawable internal constructor() : Drawable(), Animatable {
     @RestrictTo(LIBRARY_GROUP_PREFIX)
-    @IntDef({RESTART, REVERSE})
-    @Retention(RetentionPolicy.SOURCE)
-    public @interface RepeatMode {}
+    @IntDef(RESTART, REVERSE)
+    @Retention(AnnotationRetention.SOURCE)
+    annotation class RepeatMode
 
-    private LottieDrawableState mLottieState;
+    private var lottieState: LottieDrawableState = LottieDrawableState()
 
     /**
      * An animation listener to be notified when the animation starts, ends or repeats.
      */
-    private LottieAnimationListener mListener;
+    private var listener: LottieAnimationListener? = null
 
     /**
      * Additional playing state to indicate whether an animator has been start()'d. There is
@@ -76,150 +48,138 @@ public class LottieDrawable extends Drawable implements Animatable {
      * Note that delayed animations are different: they are not started until their first
      * animation frame, which occurs after their delay elapses.
      */
-    private boolean mRunning;
+    private var running = false
 
     /**
      * Set to true when the animation ends.
      */
-    private boolean mEnded = false;
+    private var ended = false
 
     /**
      * Set to true when the animation starts.
      */
-    private boolean mStarted = false;
+    private var started = false
 
     /**
      * Indicates how many times the animation was repeated.
      */
-    private int mRepeated = 0;
+    private var repeated = 0
 
-    private int mFrame;
+    private var frame = 0
 
     /**
      * Animation handler used to schedule updates.
      */
-    private final Handler mHandler = new Handler(Looper.getMainLooper());
+    private val handler = Handler(Looper.getMainLooper())
 
-    private final Runnable mNextFrameRunnable = () -> invalidateSelf();
+    private val nextFrameRunnable = Runnable { invalidateSelf() }
 
     // Temp variable, only for saving "new" operation at the draw() time.
-    private Paint mTmpPaint = new Paint();
+    private val tmpPaint = Paint()
 
-    private boolean mMutated;
+    private var mutated = false
 
-    private LottieDrawable() {
-        mLottieState = new LottieDrawableState();
+    internal constructor(state: LottieDrawableState) : this() {
+        lottieState = state
     }
 
-    private LottieDrawable(@NonNull LottieDrawableState state) {
-        mLottieState = state;
+    fun release() {
+        lottieState.releaseLottie()
     }
 
-    public void release() {
-        mLottieState.releaseLottie();
-    }
-
-    @NonNull
-    @Override
-    public Drawable mutate() {
-        if (!mMutated && super.mutate() == this) {
-            mLottieState = new LottieDrawableState(mLottieState);
-            mMutated = true;
+    override fun mutate(): Drawable {
+        if (!mutated && super.mutate() === this) {
+            lottieState = LottieDrawableState(lottieState)
+            mutated = true
         }
-        return this;
+        return this
     }
 
-    @Override
-    public void draw(@NonNull Canvas canvas) {
-        if (mLottieState.valid() && mRunning) {
-            if (!mStarted) {
-                mStarted = true;
-                dispatchAnimationStart();
+    override fun draw(canvas: Canvas) {
+        if (lottieState.valid() && running) {
+            if (!started) {
+                started = true
+                dispatchAnimationStart()
             }
 
-            long startTime = System.nanoTime();
+            val startTime = System.nanoTime()
 
-            canvas.drawBitmap(getFrame(mFrame), 0, 0, mTmpPaint);
+            getFrame(frame)?.let { bitmap ->
+                canvas.drawBitmap(bitmap, 0f, 0f, tmpPaint)
+            }
 
-            if (mRepeated == mLottieState.mRepeatCount) {
-                if (!mEnded) {
-                    mEnded = true;
-                    dispatchAnimationEnd();
+            if (repeated == lottieState.repeatCount) {
+                if (!ended) {
+                    ended = true
+                    dispatchAnimationEnd()
                 }
             } else {
-                boolean resetFrame = false;
+                var resetFrame = false
                 // Increase frame count.
-                mFrame += mLottieState.mFramesPerUpdate;
-                if (mFrame > mLottieState.mLastFrame) {
-                    mFrame = mLottieState.mFirstFrame;
-                    resetFrame = true;
-                } else if (mFrame < mLottieState.mFirstFrame) {
-                    mFrame = mLottieState.mLastFrame;
-                    resetFrame = true;
+                frame += lottieState.framesPerUpdate
+                if (frame > lottieState.lastFrame) {
+                    frame = lottieState.firstFrame
+                    resetFrame = true
+                } else if (frame < lottieState.firstFrame) {
+                    frame = lottieState.lastFrame
+                    resetFrame = true
                 }
                 if (resetFrame) {
-                    mRepeated++;
-                    dispatchAnimationRepeat();
+                    repeated++
+                    dispatchAnimationRepeat()
                 }
             }
 
-            long endTime = System.nanoTime();
+            val endTime = System.nanoTime()
 
-            mHandler.postDelayed(mNextFrameRunnable, mLottieState.mFrameInterval
-                    - ((endTime - startTime) / 1000000));
+            handler.postDelayed(
+                nextFrameRunnable, lottieState.frameInterval
+                        - ((endTime - startTime) / 1000000)
+            )
         }
     }
 
-    @Nullable
-    public Bitmap getFrame(int frame) {
-        return mLottieState.getLottieBuffer(frame);
+    fun getFrame(frame: Int): Bitmap? {
+        return lottieState.getLottieBuffer(frame)
     }
 
-    @Override
-    public void setAlpha(int alpha) {
+    override fun setAlpha(alpha: Int) {
     }
 
-    @Override
-    public void setColorFilter(@Nullable ColorFilter colorFilter) {
+    @Deprecated("Deprecated in Drawable")
+    override fun setColorFilter(colorFilter: ColorFilter?) {
     }
 
-    @Override
-    public int getOpacity() {
-        return PixelFormat.TRANSLUCENT;
+    @Deprecated("Deprecated in Drawable")
+    override fun getOpacity(): Int {
+        return PixelFormat.TRANSLUCENT
     }
 
-    @Override
-    public int getIntrinsicWidth() {
-        return mLottieState.mWidth;
+    override fun getIntrinsicWidth(): Int {
+        return lottieState.width
     }
 
-    @Override
-    public int getIntrinsicHeight() {
-        return mLottieState.mHeight;
+    override fun getIntrinsicHeight(): Int {
+        return lottieState.height
     }
 
     /**
-     * Sets how many times the animation should be repeated. If the repeat
-     * count is 0, the animation is never repeated. If the repeat count is
-     * greater than 0 or {@link #INFINITE}, the repeat mode will be taken
-     * into account. The repeat count is 0 by default.
+     * Defines how many times the animation should repeat.
      *
-     * @param count the number of times the animation should be repeated
-     */
-    public void setRepeatCount(int count) {
-        mLottieState.mRepeatCount = count;
-        mRepeated = 0;
-    }
-
-    /**
-     * Defines how many times the animation should repeat. The default value
-     * is 0.
+     * If the repeat count is 0, the animation is never repeated.
+     * If the repeat count is greater than 0 or [INFINITE],
+     * the repeat mode will be taken into account.
      *
-     * @return the number of times the animation should repeat, or {@link #INFINITE}
-     */
-    public int getRepeatCount() {
-        return mLottieState.mRepeatCount;
-    }
+     * The default value is 0.
+     *
+     * @property repeatCount the number of times the animation should be repeated, or [INFINITE]
+    */
+    var repeatCount: Int
+        get() = lottieState.repeatCount
+        set(count) {
+            lottieState.repeatCount = count
+            repeated = 0
+        }
 
     /**
      * Defines what this animation should do when it reaches the end. This
@@ -228,8 +188,8 @@ public class LottieDrawable extends Drawable implements Animatable {
      *
      * @param mode {@link #RESTART} or {@link #REVERSE}
      */
-    public void setRepeatMode(@RepeatMode int mode) {
-        mLottieState.setRepeatMode(mode);
+    fun setRepeatMode(@RepeatMode mode: Int) {
+        lottieState.repeatMode = mode
     }
 
     /**
@@ -237,389 +197,410 @@ public class LottieDrawable extends Drawable implements Animatable {
      *
      * @return either one of {@link #REVERSE} or {@link #RESTART}
      */
-    @RepeatMode
-    public int getRepeatMode() {
-        return mLottieState.mRepeatMode;
+    @get:RepeatMode
+    val repeatMode: Int
+        get() = lottieState.repeatMode
+
+    fun setFirstFrame(frame: Int) {
+        lottieState.firstFrame = frame
     }
 
-    public void setFirstFrame(int frame) {
-        mLottieState.setFirstFrame(frame);
+    val firstFrame: Int
+        get() = lottieState.firstFrame
+
+    fun setLastFrame(frame: Int) {
+        lottieState.lastFrame = frame
     }
 
-    public int getFirstFrame() {
-        return mLottieState.mFirstFrame;
-    }
+    val lastFrame: Int
+        get() = lottieState.lastFrame
 
-    public void setLastFrame(int frame) {
-        mLottieState.setLastFrame(frame);
-    }
-
-    public int getLastFrame() {
-        return mLottieState.mLastFrame;
-    }
-
-    public boolean isAutoPlay() {
-        return mLottieState.mAutoPlay;
-    }
+    val isAutoPlay: Boolean
+        get() = lottieState.autoPlay
 
     /**
      * Gets the length of the animation.
      *
      * @return The length of the animation, in milliseconds.
      */
-    public long getDuration() {
-        return mLottieState.mLottie.mDuration;
-    }
+    val duration: Long
+        get() = if (lottieState.valid()) lottieState.lottie?.duration ?: 0L else 0L
 
-    public void setSpeed(@FloatRange(from = 0) float speed) {
-        mLottieState.setSpeed(speed);
-    }
-
-    @FloatRange(from = 0)
-    public float getSpeed() {
-        return mLottieState.mSpeed;
-    }
-
-    public void setSize(int width, int height) {
-        if (width <= 0) {
-            throw new IllegalArgumentException("LottieDrawable requires width > 0");
-        } else if (height <= 0) {
-            throw new IllegalArgumentException("LottieDrawable requires height > 0");
+    var speed: Float
+        @FloatRange(from = 0.0) get() = lottieState.speed
+        set(@FloatRange(from = 0.0) value) {
+            lottieState.speed = value
         }
-        mLottieState.setLottieSize(width, height);
+
+    fun setSize(width: Int, height: Int) {
+        require(width > 0) { "LottieDrawable requires width > 0" }
+        require(height > 0) { "LottieDrawable requires height > 0" }
+        lottieState.setLottieSize(width, height)
     }
 
-    @Override
-    public boolean isRunning() {
-        return mRunning;
+    override fun isRunning(): Boolean {
+        return running
     }
 
-    @Override
-    public void start() {
-        mRunning = true;
-        mEnded = false;
-        mStarted = false;
-        mRepeated = 0;
-        mFrame = mLottieState.mFirstFrame;
-        invalidateSelf();
+    override fun start() {
+        running = true
+        ended = false
+        started = false
+        repeated = 0
+        frame = lottieState.firstFrame
+        invalidateSelf()
     }
 
-    @Override
-    public void stop() {
-        mRunning = false;
-        mHandler.removeCallbacks(mNextFrameRunnable);
+    override fun stop() {
+        running = false
+        handler.removeCallbacks(nextFrameRunnable)
     }
 
-    public void pause() {
-        mRunning = false;
-        mHandler.removeCallbacks(mNextFrameRunnable);
+    fun pause() {
+        running = false
+        handler.removeCallbacks(nextFrameRunnable)
     }
 
-    public void resume() {
-        mRunning = true;
-        invalidateSelf();
+    fun resume() {
+        running = true
+        invalidateSelf()
     }
 
     /**
-     * <p>Binds an lottie animation listener to this drawable. The lottie animation listener
+     *
+     * Binds an lottie animation listener to this drawable. The lottie animation listener
      * is notified of animation events such as the end of the animation or the repetition of
-     * the animation.</p>
+     * the animation.
      *
      * @param listener the lottie animation listener to be notified
      */
-    public void setAnimationListener(LottieAnimationListener listener) {
-        mListener = listener;
+    fun setAnimationListener(listener: LottieAnimationListener?) {
+        this@LottieDrawable.listener = listener
     }
 
-    void dispatchAnimationStart() {
-        if (mListener != null) {
-            mListener.onAnimationStart();
-        }
+    internal fun dispatchAnimationStart() {
+        listener?.onAnimationStart()
     }
 
-    void dispatchAnimationRepeat() {
-        if (mListener != null) {
-            mListener.onAnimationRepeat();
-        }
+    internal fun dispatchAnimationRepeat() {
+        listener?.onAnimationRepeat()
     }
 
-    void dispatchAnimationEnd() {
-        if (mListener != null) {
-            mListener.onAnimationEnd();
-        }
+    internal fun dispatchAnimationEnd() {
+        listener?.onAnimationEnd()
     }
 
-    @Nullable
-    public static LottieDrawable create(Resources resources, @DrawableRes int resId) {
-        try {
-            @SuppressLint("ResourceType") final XmlPullParser parser = resources.getXml(resId);
-            final AttributeSet attrs = Xml.asAttributeSet(parser);
-            int type;
-            while ((type = parser.next()) != XmlPullParser.START_TAG
-                    && type != XmlPullParser.END_DOCUMENT) {
-                // Empty loop
-            }
-            if (type != XmlPullParser.START_TAG) {
-                throw new XmlPullParserException("No start tag found");
-            }
+    override fun inflate(
+        r: Resources, parser: XmlPullParser,
+        attrs: AttributeSet
+    ) {
+        val state = lottieState
 
-            final LottieDrawable drawable = new LottieDrawable();
-            drawable.inflate(resources, parser, attrs);
+        val a = r.obtainAttributes(attrs, R.styleable.LottieDrawable)
 
-            return drawable;
-        } catch (XmlPullParserException e) {
-            Log.e(TAG, "parser error", e);
-        } catch (IOException e) {
-            Log.e(TAG, "parser error", e);
-        }
-        return null;
+        val rawRes = a.getResourceId(R.styleable.LottieDrawable_rawRes, 0)
+        require(rawRes != 0) { "" }
+
+        state.lottie = Lottie(loadJSONFile(r, rawRes))
+        val lottie = checkNotNull(state.lottie)
+
+        setLastFrame(a.getInt(R.styleable.LottieDrawable_frameTo, lottie.frameCount))
+        setFirstFrame(a.getInt(R.styleable.LottieDrawable_frameFrom, 0))
+        this.speed = a.getFloat(R.styleable.LottieDrawable_speed, 1f)
+
+        setRepeatMode(a.getInt(R.styleable.LottieDrawable_android_repeatMode, RESTART))
+        this.repeatCount = a.getInt(R.styleable.LottieDrawable_android_repeatCount, 0)
+
+        state.autoPlay = a.getBoolean(R.styleable.LottieDrawable_android_autoStart, true)
+
+        val defaultSize = (r.displayMetrics.density * UNDEFINED_SIZE_IN_DIP).toInt()
+        state.baseWidth = a.getDimensionPixelOffset(
+            R.styleable.LottieDrawable_android_width,
+            defaultSize
+        ).toFloat()
+        state.baseHeight = a.getDimensionPixelOffset(
+            R.styleable.LottieDrawable_android_height,
+            defaultSize
+        ).toFloat()
+
+        a.recycle()
+
+        state.setLottieSize(state.baseWidth.toInt(), state.baseHeight.toInt())
     }
 
-    @Override
-    public void inflate(@NonNull Resources r, @NonNull XmlPullParser parser,
-            @NonNull AttributeSet attrs) throws IOException {
-        final LottieDrawableState state = mLottieState;
+    internal class LottieDrawableState : ConstantState {
+        var lottie: Lottie? = null
 
-        final TypedArray a = r.obtainAttributes(attrs, R.styleable.LottieDrawable);
+        var baseWidth = 0f
+        var baseHeight = 0f
 
-        final int rawRes = a.getResourceId(R.styleable.LottieDrawable_rawRes, 0);
-        if (rawRes == 0) {
-            throw new IllegalArgumentException("");
-        }
-
-        state.mLottie = new Lottie(loadJSONFile(r, rawRes));
-
-        setLastFrame(a.getInt(R.styleable.LottieDrawable_frameTo, state.mLottie.mFrameCount));
-        setFirstFrame(a.getInt(R.styleable.LottieDrawable_frameFrom, 0));
-        setSpeed(a.getFloat(R.styleable.LottieDrawable_speed, 1f));
-
-        setRepeatMode(a.getInt(R.styleable.LottieDrawable_android_repeatMode, RESTART));
-        setRepeatCount(a.getInt(R.styleable.LottieDrawable_android_repeatCount, 0));
-
-        state.mAutoPlay = a.getBoolean(R.styleable.LottieDrawable_android_autoStart, true);
-
-        final int defaultSize = (int) (r.getDisplayMetrics().density * UNDEFINED_SIZE_IN_DIP);
-        state.mBaseWidth = a.getDimensionPixelOffset(R.styleable.LottieDrawable_android_width,
-                defaultSize);
-        state.mBaseHeight = a.getDimensionPixelOffset(R.styleable.LottieDrawable_android_height,
-                defaultSize);
-
-        a.recycle();
-
-        state.setLottieSize((int) state.mBaseWidth, (int) state.mBaseHeight);
-    }
-
-    private static String loadJSONFile(Resources res, @RawRes int resId) throws IOException {
-        String json = null;
-        try {
-            InputStream is = res.openRawResource(resId);
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is));
-            StringBuilder sb = new StringBuilder();
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-            is.close();
-            json = sb.toString();
-        } catch (IOException e) {
-            throw new IOException("Failed to read a lottie file.");
-        }
-        return json;
-    }
-
-    private static class LottieDrawableState extends ConstantState {
-        private Lottie mLottie;
-
-        private float mBaseWidth = 0;
-        private float mBaseHeight = 0;
-
-        private int mWidth = 0;
-        private int mHeight = 0;
+        var width = 0
+        var height = 0
 
         /**
          * The type of repetition that will occur when repeatMode is nonzero. RESTART means the
          * animation will start from the beginning on every new cycle. REVERSE means the animation
          * will reverse directions on each iteration.
          */
-        private int mRepeatMode = RESTART;
+        var repeatMode: Int = RESTART
+            set(@RepeatMode value) {
+                field = value
+                framesPerUpdate = if (field == RESTART) 1 else -1
+            }
 
-        private int mRepeatCount;
+        var repeatCount = 0
 
-        private float mSpeed;
+        var speed = 0f
+            set(@FloatRange(from = 0.0) value) {
+                field = value
+                updateFrameInterval()
+            }
 
-        private int mFirstFrame;
-        private int mLastFrame;
+        var firstFrame = 0
+            set(value) {
+                field = value.coerceAtMost(lastFrame)
+                updateFrameInterval()
+            }
+        var lastFrame = 0
+            set(value) {
+                 lottie?.apply {
+                     field = value.coerceAtMost(frameCount)
+                     updateFrameInterval()
+                }
+            }
 
-        private long mFrameInterval;
+        var frameInterval = 0L
 
-        private int mFramesPerUpdate = 1;
+        var framesPerUpdate = 1
 
-        private boolean mAutoPlay;
+        var autoPlay = false
 
-        private float mAlpha = 1f;
+        var alpha = 1f
 
-        LottieDrawableState(LottieDrawableState copy) {
-            if (copy != null) {
-                mLottie = new Lottie(copy.mLottie);
-                mBaseWidth = copy.mBaseWidth;
-                mBaseHeight = copy.mBaseHeight;
-                mRepeatCount = copy.mRepeatCount;
-                mRepeatMode = copy.mRepeatMode;
-                mFramesPerUpdate = copy.mFramesPerUpdate;
-                mAutoPlay = copy.mAutoPlay;
-                mSpeed = copy.mSpeed;
-                mAlpha = copy.mAlpha;
+        internal constructor()
+
+        internal constructor(copy: LottieDrawableState?) {
+            copy?.lottie?.let { lottie ->
+                this@LottieDrawableState.lottie = Lottie(lottie)
+                baseWidth = copy.baseWidth
+                baseHeight = copy.baseHeight
+                repeatCount = copy.repeatCount
+                repeatMode = copy.repeatMode
+                framesPerUpdate = copy.framesPerUpdate
+                autoPlay = copy.autoPlay
+                speed = copy.speed
+                alpha = copy.alpha
             }
         }
 
-        private void releaseLottie() {
-            mLottie.destroy();
-            mLottie = null;
+        fun releaseLottie() {
+            lottie?.destroy()
+            lottie = null
         }
 
-        private boolean valid() {
-            return mLottie != null && mLottie.mNativePtr != 0;
+        fun valid(): Boolean {
+            return lottie?.nativePtr != 0L
         }
 
-        private void setLottieSize(int width, int height) {
-            if (width != mWidth || height != mHeight) {
-                mWidth = width;
-                mHeight = height;
-                mLottie.setBufferSize(width, height);
+        fun setLottieSize(width: Int, height: Int) {
+            if (width != this@LottieDrawableState.width || height != this@LottieDrawableState.height) {
+                this@LottieDrawableState.width = width
+                this@LottieDrawableState.height = height
+                lottie?.setBufferSize(width, height)
             }
         }
 
-        private Bitmap getLottieBuffer(int frame) {
-            return mLottie.getBuffer(frame);
+        fun getLottieBuffer(frame: Int): Bitmap? {
+            return lottie?.getBuffer(frame)
         }
 
-        private void setRepeatMode(@RepeatMode int mode) {
-            mRepeatMode = mode;
-            mFramesPerUpdate = mRepeatMode == RESTART ? 1 : -1;
+        fun updateFrameInterval() {
+            lottie?.let {
+                val frameCount = lastFrame - firstFrame
+                frameInterval = (it.duration / frameCount / speed).toLong()
+            }
         }
 
-        private void setSpeed(@FloatRange(from = 0) float speed) {
-            mSpeed = speed;
-            updateFrameInterval();
+        override fun newDrawable(): Drawable {
+            return LottieDrawable(this)
         }
 
-        private void setFirstFrame(int frame) {
-            mFirstFrame = Math.min(frame, mLastFrame);
-            updateFrameInterval();
-        }
-
-        private void setLastFrame(int frame) {
-            mLastFrame = Math.min(frame, mLottie.mFrameCount);
-            updateFrameInterval();
-        }
-
-        private void updateFrameInterval() {
-            int frameCount = mLastFrame - mFirstFrame;
-            mFrameInterval = (long) (mLottie.mDuration / frameCount / mSpeed);
-        }
-
-        LottieDrawableState() {
-        }
-
-        @NonNull
-        @Override
-        public Drawable newDrawable() {
-            return new LottieDrawable(this);
-        }
-
-        @Override
-        public int getChangingConfigurations() {
-            return 0;
+        override fun getChangingConfigurations(): Int {
+            return 0
         }
     }
 
-    private static class Lottie {
-        private static final int LOTTIE_INFO_FRAME_COUNT = 0;
-        private static final int LOTTIE_INFO_DURATION = 1;
-        private static final int LOTTIE_INFO_COUNT = 2;
+    internal class Lottie {
+        val jsonContent: String
 
-        private final String mJsonContent;
+        val nativePtr: Long
 
-        private final long mNativePtr;
-
-        private int mFrameCount;
+        var frameCount = 0
 
         // How long the animation should last in ms
-        private long mDuration;
+        var duration: Long = 0
 
-        private Bitmap mBuffer;
+        private var buffer: Bitmap? = null
 
-        Lottie(@NonNull Lottie copy) {
-            mJsonContent = copy.mJsonContent;
-            mNativePtr = init(copy.mJsonContent);
-            mFrameCount = copy.mFrameCount;
-            mDuration = copy.mDuration;
+        constructor(copy: Lottie) {
+            jsonContent = copy.jsonContent
+            nativePtr = init(copy.jsonContent)
+            frameCount = copy.frameCount
+            duration = copy.duration
         }
 
-        Lottie(String content) {
-            mJsonContent = content;
-            mNativePtr = init(mJsonContent);
+        constructor(content: String) {
+            jsonContent = content
+            nativePtr = init(jsonContent)
         }
 
-        long init(@NonNull String content) {
-            final int[] outValues = new int[LOTTIE_INFO_COUNT];
-            long nativePtr = nCreateLottie(content, content.length(), outValues);
-            mFrameCount = outValues[LOTTIE_INFO_FRAME_COUNT];
-            mDuration = outValues[LOTTIE_INFO_DURATION] * 1000L;
-            return nativePtr;
+        fun init(content: String): Long {
+            val outValues = IntArray(LOTTIE_INFO_COUNT)
+            val nativePtr = nCreateLottie(content, content.length, outValues)
+            frameCount = outValues[LOTTIE_INFO_FRAME_COUNT]
+            duration = outValues[LOTTIE_INFO_DURATION] * 1000L
+            return nativePtr
         }
 
-        void destroy() {
-            if (mBuffer != null) {
-                mBuffer.recycle();
-                mBuffer = null;
+        fun destroy() {
+            buffer?.recycle()
+            buffer = null
+            nDestroyLottie(nativePtr)
+        }
+
+        fun setBufferSize(width: Int, height: Int) {
+            buffer = createBitmap(width, height, Bitmap.Config.ARGB_8888)
+            nSetLottieBufferSize(nativePtr, buffer, width.toFloat(), height.toFloat())
+        }
+
+        fun getBuffer(frame: Int): Bitmap? {
+            buffer?.let {
+                nDrawLottieFrame(nativePtr, it, frame)
             }
-            nDestroyLottie(mNativePtr);
+            return buffer
         }
 
-        void setBufferSize(int width, int height) {
-            mBuffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888);
-            nSetLottieBufferSize(mNativePtr, mBuffer, width, height);
-        }
-
-        Bitmap getBuffer(int frame) {
-            nDrawLottieFrame(mNativePtr, mBuffer, frame);
-            return mBuffer;
+        companion object {
+            private const val LOTTIE_INFO_FRAME_COUNT = 0
+            private const val LOTTIE_INFO_DURATION = 1
+            private const val LOTTIE_INFO_COUNT = 2
         }
     }
 
     /**
-     * <p>An animation listener receives notifications from an animation.
+     *
+     * An animation listener receives notifications from an animation.
      * Notifications indicate animation related events, such as the end or the
-     * repetition of the animation.</p>
+     * repetition of the animation.
      */
-    public interface LottieAnimationListener {
+    interface LottieAnimationListener {
         /**
-         * <p>Notifies the start of the lottie animation.</p>
+         *
+         * Notifies the start of the lottie animation.
          */
-        void onAnimationStart();
+        fun onAnimationStart()
 
         /**
-         * <p>Notifies the end of the lottie animation. This callback is not invoked
-         * for animations with repeat count set to INFINITE.</p>
+         *
+         * Notifies the end of the lottie animation. This callback is not invoked
+         * for animations with repeat count set to INFINITE.
          */
-        void onAnimationEnd();
+        fun onAnimationEnd()
 
         /**
-         * <p>Notifies the repetition of the lottie animation.</p>
+         *
+         * Notifies the repetition of the lottie animation.
          */
-        void onAnimationRepeat();
+        fun onAnimationRepeat()
     }
 
-    static {
-        System.loadLibrary("lottie-libs");
+    companion object {
+        private const val TAG = "LottieDrawable"
+
+        private const val UNDEFINED_SIZE_IN_DIP = 50
+
+        /**
+         * Repeat the animation indefinitely.
+         */
+        const val INFINITE: Int = -1
+
+        /**
+         * When the animation reaches the end and the repeat count is INFINTE_REPEAT
+         * or a positive value, the animation restarts from the beginning.
+         */
+        const val RESTART = 1
+
+        /**
+         * When the animation reaches the end and the repeat count is INFINTE_REPEAT
+         * or a positive value, the animation plays backward (and then forward again).
+         */
+        const val REVERSE = 2
+
+        @JvmStatic
+        fun create(resources: Resources, @DrawableRes resId: Int): LottieDrawable? {
+            return try {
+                @SuppressLint("ResourceType")
+                val parser = resources.getXml(resId)
+                val attrs = Xml.asAttributeSet(parser)
+                var type: Int
+                while (parser.next().also { type = it } != XmlPullParser.START_TAG
+                    && type != XmlPullParser.END_DOCUMENT
+                ) {
+                    // Empty loop
+                }
+                if (type != XmlPullParser.START_TAG) {
+                    throw XmlPullParserException("No start tag found")
+                }
+
+                val drawable = LottieDrawable()
+                drawable.inflate(resources, parser, attrs)
+
+                drawable
+            } catch (e: XmlPullParserException) {
+                Log.e(TAG, "parser error", e)
+                null
+            } catch (e: IOException) {
+                Log.e(TAG, "parser error", e)
+                null
+            }
+        }
+
+        @Throws(IOException::class)
+        private fun loadJSONFile(res: Resources, @RawRes resId: Int): String {
+            return try {
+                res.openRawResource(resId).use { inputStream ->
+                    BufferedReader(InputStreamReader(inputStream)).use { reader ->
+                        reader.lineSequence().joinToString("")
+                    }
+                }
+            } catch (e: IOException) {
+                throw IOException("Failed to read a lottie file.")
+            }
+        }
+
+        init {
+            System.loadLibrary("lottie-libs")
+        }
+
+        @JvmStatic
+        private external fun nCreateLottie(
+            content: String?,
+            length: Int,
+            outValues: IntArray?
+        ): Long
+
+        @JvmStatic
+        private external fun nSetLottieBufferSize(
+            lottiePtr: Long,
+            bitmap: Bitmap?,
+            width: Float,
+            height: Float
+        )
+
+        @JvmStatic
+        private external fun nDrawLottieFrame(lottiePtr: Long, bitmap: Bitmap, frame: Int)
+
+        @JvmStatic
+        private external fun nDestroyLottie(lottiePtr: Long)
     }
-
-    private static native long nCreateLottie(String content, int length, int[] outValues);
-
-    private static native void nSetLottieBufferSize(long lottiePtr, Bitmap bitmap, float width, float height);
-
-    private static native void nDrawLottieFrame(long lottiePtr, Bitmap bitmap, int frame);
-
-    private static native void nDestroyLottie(long lottiePtr);
 }
