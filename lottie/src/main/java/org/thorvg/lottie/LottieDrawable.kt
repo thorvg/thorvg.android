@@ -165,12 +165,12 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     }
 
     /**
-     * Sets how many times the animation should be repeated. If the repeat
+     * Defines how many times the animation should be repeated. If the repeat
      * count is 0, the animation is never repeated. If the repeat count is
      * greater than 0 or [INFINITE], the repeat mode will be taken
      * into account. The repeat count is 0 by default.
      *
-     * @param count the number of times the animation should be repeated
+     * @property repeatCount the number of times the animation should be repeated
      */
     var repeatCount: Int
         get() = lottieState.repeatCount
@@ -311,7 +311,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         state.autoPlay = a.getBoolean(R.styleable.LottieDrawable_android_autoStart, true)
 
         val defaultSize = (r.displayMetrics.density * UNDEFINED_SIZE_IN_DIP).toInt()
-        state.mBaseWidth = a.getDimensionPixelOffset(
+        state.baseWidth = a.getDimensionPixelOffset(
             R.styleable.LottieDrawable_android_width,
             defaultSize
         ).toFloat()
@@ -322,13 +322,13 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
 
         a.recycle()
 
-        state.setLottieSize(state.mBaseWidth.toInt(), state.baseHeight.toInt())
+        state.setLottieSize(state.baseWidth.toInt(), state.baseHeight.toInt())
     }
 
     internal class LottieDrawableState : ConstantState {
         var lottie: Lottie? = null
 
-        var mBaseWidth = 0f
+        var baseWidth = 0f
         var baseHeight = 0f
 
         var width = 0
@@ -379,7 +379,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         constructor(copy: LottieDrawableState?) {
             copy?.lottie?.let { lottie ->
                 this@LottieDrawableState.lottie = Lottie(lottie)
-                mBaseWidth = copy.mBaseWidth
+                baseWidth = copy.baseWidth
                 baseHeight = copy.baseHeight
                 repeatCount = copy.repeatCount
                 repeatMode = copy.repeatMode
