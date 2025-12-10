@@ -8,6 +8,10 @@ using namespace std;
 extern "C" jlong
 Java_org_thorvg_lottie_LottieDrawable_nCreateLottie(JNIEnv *env, jclass clazz,
         jstring content, jint length, jintArray out_values) {
+    if (content == nullptr || inputStr == nullptr) {
+        return 0;
+    }
+
     if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
         return 0;
     }
