@@ -244,7 +244,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
      * @return The length of the animation, in milliseconds.
      */
     val duration: Long
-        get() = if (lottieState.valid()) lottieState.lottie.duration else 0L
+        get() = if (lottieState.valid()) lottieState.lottie?.duration ?: 0L else 0L
 
     var speed: Float
         @FloatRange(from = 0.0)
@@ -322,8 +322,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         require(rawRes != 0) { "" }
 
         state.lottie = Lottie(loadJSONFile(r, rawRes))
-
-        setLastFrame(a.getInt(R.styleable.LottieDrawable_frameTo, state.lottie.frameCount))
+        state.lottie?.let { lottie -> setLastFrame(a.getInt(R.styleable.LottieDrawable_frameTo, lottie.frameCount)) }
         setFirstFrame(a.getInt(R.styleable.LottieDrawable_frameFrom, 0))
         this@LottieDrawable.speed = a.getFloat(R.styleable.LottieDrawable_speed, 1f)
 
@@ -349,7 +348,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     }
 
     internal class LottieDrawableState : ConstantState {
-        lateinit var lottie: Lottie
+        var lottie: Lottie? = null
 
         var baseWidth = 0f
         var baseHeight = 0f
@@ -383,8 +382,10 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
             }
         var lastFrame = 0
             set(value) {
-                field = value.coerceAtMost(lottie.frameCount)
-                updateFrameInterval()
+                 lottie?.apply {
+                     field = value.coerceAtMost(frameCount)
+                     updateFrameInterval()
+                }
             }
 
         var frameInterval = 0L
@@ -398,8 +399,8 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         constructor()
 
         constructor(copy: LottieDrawableState?) {
-            if (copy != null) {
-                lottie = Lottie(copy.lottie)
+            copy?.lottie?.let { lottie ->
+                this@LottieDrawableState.lottie = Lottie(lottie)
                 baseWidth = copy.baseWidth
                 baseHeight = copy.baseHeight
                 repeatCount = copy.repeatCount
@@ -412,28 +413,31 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         }
 
         fun releaseLottie() {
-            lottie.destroy()
+            lottie?.destroy()
+            lottie = null
         }
 
         fun valid(): Boolean {
-            return ::lottie.isInitialized && lottie.nativePtr != 0L
+            return lottie?.nativePtr != 0L
         }
 
         fun setLottieSize(width: Int, height: Int) {
             if (width != this@LottieDrawableState.width || height != this@LottieDrawableState.height) {
                 this@LottieDrawableState.width = width
                 this@LottieDrawableState.height = height
-                lottie.setBufferSize(width, height)
+                lottie?.setBufferSize(width, height)
             }
         }
 
         fun getLottieBuffer(frame: Int): Bitmap? {
-            return lottie.getBuffer(frame)
+            return lottie?.getBuffer(frame)
         }
 
         private fun updateFrameInterval() {
-            val frameCount = lastFrame - firstFrame
-            frameInterval = (lottie.duration / frameCount / speed).toLong()
+            lottie?.let {
+                val frameCount = lastFrame - firstFrame
+                frameInterval = (it.duration / frameCount / speed).toLong()
+            }
         }
 
         override fun newDrawable(): Drawable {
@@ -588,7 +592,11 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         }
 
         @JvmStatic
-        private external fun nCreateLottie(content: String, length: Int, outValues: IntArray): Long
+        private external fun nCreateLottie(
+            content: String?,
+            length: Int,
+            outValues: IntArray?
+        ): Long
 
         @JvmStatic
         private external fun nSetLottieBufferSize(
