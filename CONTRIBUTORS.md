@@ -1,9 +1,9 @@
 ## Project Lead
-- Hermet Park <hermetpark@gmail.com>
+- Hermet Park @hermet
 
 ## Maintainer
-- YouJin Lee <ol-of@naver.com>
+- YouJin Lee @ol-of
 
 ## Contributors
-- HyunWoo Lee <l2hyunwoo@gmail.com>
-- Nayoung Kong <ahenaka9@gmail.com>
+- HyunWoo Lee @l2hyunwoo
+- Nayoung Kong @young924
