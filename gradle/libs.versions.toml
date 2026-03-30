@@ -21,6 +21,9 @@ espresso = "3.5.1"
 
 # Build
 cmake = "3.22.1"
+runner = "1.0.2"
+espressoCore = "3.0.2"
+appcompatV7 = "28.0.0"
 
 [libraries]
 # AndroidX
@@ -33,6 +36,9 @@ junit = { module = "junit:junit", version.ref = "junit" }
 junit5-jupiter = { module = "org.junit.jupiter:junit-jupiter", version.ref = "junit5" }
 junit5-jupiter-engine = { module = "org.junit.jupiter:junit-jupiter-engine", version.ref = "junit5" }
 espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "espresso" }
+runner = { group = "com.android.support.test", name = "runner", version.ref = "runner" }
+android-espresso-core = { group = "com.android.support.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+appcompat-v7 = { group = "com.android.support", name = "appcompat-v7", version.ref = "appcompatV7" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
