@@ -125,7 +125,10 @@ class LottieComposition private constructor(
         nativeLottie.destroy()
     }
 
-    internal fun copy(): LottieComposition {
+    /**
+     * Creates a new composition instance backed by a separate native handle using the same source content.
+     */
+    fun copy(): LottieComposition {
         return LottieComposition(nativeLottie.copy())
     }
 
@@ -157,7 +160,10 @@ class LottieComposition private constructor(
     }
 }
 
-internal open class LottieRenderState {
+/**
+ * Shared mutable playback state used by platform-specific adapters.
+ */
+open class LottieRenderState {
     var composition: LottieComposition? = null
 
     var baseWidth = 0f

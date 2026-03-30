@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.thorvg.lottie
+package org.thorvg.lottie.view
 
 import android.content.Context
 import android.content.res.Resources
@@ -30,38 +30,42 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.DrawableRes
+import org.thorvg.lottie.LottieAnimationListener
 
 /**
  * View-based host for rendering a [LottieDrawable] inside the Android View system.
  */
 class LottieAnimationView @JvmOverloads constructor(
-    context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0,
+    context: Context,
+    attrs: AttributeSet? = null,
+    defStyleAttr: Int = 0,
     defStyleRes: Int = 0
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
     private var drawable: LottieDrawable? = null
     private var listener: LottieAnimationListener? = null
 
     private var resId = Resources.ID_NULL
-
     private var onAttached = false
 
     init {
-        val a = context.obtainStyledAttributes(
-            attrs, R.styleable.LottieAnimationView, defStyleAttr, defStyleRes
+        val attributes = context.obtainStyledAttributes(
+            attrs,
+            R.styleable.LottieAnimationView,
+            defStyleAttr,
+            defStyleRes
         )
-        resId = a.getResourceId(R.styleable.LottieAnimationView_lottieDrawable, resId)
-        a.recycle()
+        resId = attributes.getResourceId(R.styleable.LottieAnimationView_lottieDrawable, resId)
+        attributes.recycle()
     }
 
     /**
      * Replaces the currently bound drawable resource.
      */
     fun setLottieDrawableResource(@DrawableRes resId: Int) {
-        if (this@LottieAnimationView.resId != resId) {
-            this@LottieAnimationView.resId = resId
-
+        if (this.resId != resId) {
+            this.resId = resId
             drawable?.release()
-
+            drawable = null
             createLottieDrawable()
         }
     }
@@ -114,30 +118,24 @@ class LottieAnimationView @JvmOverloads constructor(
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
-
         drawable?.setSize(measuredWidth, measuredHeight)
     }
 
     override fun onAttachedToWindow() {
         onAttached = true
-
         super.onAttachedToWindow()
-
         createLottieDrawable()
     }
 
     override fun onDetachedFromWindow() {
         onAttached = false
-
         super.onDetachedFromWindow()
-
         drawable?.release()
         drawable = null
     }
 
     override fun draw(canvas: Canvas) {
         super.draw(canvas)
-
         drawable?.draw(canvas)
     }
 
@@ -150,7 +148,7 @@ class LottieAnimationView @JvmOverloads constructor(
      * Registers a listener for playback lifecycle callbacks.
      */
     fun setAnimationListener(listener: LottieAnimationListener?) {
-        this@LottieAnimationView.listener = listener
+        this.listener = listener
     }
 
     override fun onSaveInstanceState(): Parcelable? {

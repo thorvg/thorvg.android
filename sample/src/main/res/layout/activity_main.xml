@@ -15,7 +15,7 @@
         android:layout_marginBottom="16dp"
         android:text="Pause" />
 
-    <org.thorvg.lottie.LottieAnimationView
+    <org.thorvg.lottie.view.LottieAnimationView
         android:id="@+id/lottie_view"
         android:layout_width="200dp"
         android:layout_height="200dp"
