@@ -28,9 +28,9 @@
 using namespace std;
 
 extern "C" jlong
-Java_org_thorvg_lottie_LottieDrawable_nCreateLottie(JNIEnv *env, jclass clazz,
+Java_org_thorvg_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jclass clazz,
         jstring content, jint length, jintArray out_values) {
-    if (content == nullptr || inputStr == nullptr) {
+    if (content == nullptr) {
         return 0;
     }
 
@@ -53,7 +53,7 @@ Java_org_thorvg_lottie_LottieDrawable_nCreateLottie(JNIEnv *env, jclass clazz,
 }
 
 extern "C" void
-Java_org_thorvg_lottie_LottieDrawable_nDestroyLottie(JNIEnv* env, jclass clazz, jlong lottie_ptr) {
+Java_org_thorvg_lottie_LottieNativeBindings_nDestroyLottie(JNIEnv* env, jclass clazz, jlong lottie_ptr) {
     tvg::Initializer::term(tvg::CanvasEngine::Sw);
 
     if (lottie_ptr == 0) {
@@ -65,7 +65,7 @@ Java_org_thorvg_lottie_LottieDrawable_nDestroyLottie(JNIEnv* env, jclass clazz, 
 }
 
 extern "C" void
-Java_org_thorvg_lottie_LottieDrawable_nSetLottieBufferSize(JNIEnv* env, jclass clazz,
+Java_org_thorvg_lottie_LottieNativeBindings_nSetLottieBufferSize(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jfloat width, jfloat height) {
     if (lottie_ptr == 0) {
         return;
@@ -80,7 +80,7 @@ Java_org_thorvg_lottie_LottieDrawable_nSetLottieBufferSize(JNIEnv* env, jclass c
 }
 
 extern "C" void
-Java_org_thorvg_lottie_LottieDrawable_nDrawLottieFrame(JNIEnv* env, jclass clazz,
+Java_org_thorvg_lottie_LottieNativeBindings_nDrawLottieFrame(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jint frame) {
     if (lottie_ptr == 0) {
         return;
