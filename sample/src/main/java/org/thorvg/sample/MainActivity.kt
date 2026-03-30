@@ -26,7 +26,7 @@ import android.app.Activity
 import android.os.Bundle
 import android.view.View
 import android.widget.TextView
-import org.thorvg.lottie.LottieAnimationView
+import org.thorvg.lottie.view.LottieAnimationView
 
 class MainActivity : Activity() {
     override fun onCreate(savedInstanceState: Bundle?) {

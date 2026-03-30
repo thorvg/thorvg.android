@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.thorvg.lottie
+package org.thorvg.lottie.view
 
 import android.annotation.SuppressLint
 import android.content.res.Resources
@@ -38,6 +38,11 @@ import android.util.Log
 import android.util.Xml
 import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
+import org.thorvg.lottie.LottieAnimationListener
+import org.thorvg.lottie.LottieComposition
+import org.thorvg.lottie.LottieConstants
+import org.thorvg.lottie.LottieRenderState
+import org.thorvg.lottie.LottieRepeatMode
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
 import java.io.IOException
