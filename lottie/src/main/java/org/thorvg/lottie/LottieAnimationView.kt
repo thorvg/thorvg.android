@@ -30,8 +30,10 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.DrawableRes
-import org.thorvg.lottie.LottieDrawable.LottieAnimationListener
 
+/**
+ * View-based host for rendering a [LottieDrawable] inside the Android View system.
+ */
 class LottieAnimationView @JvmOverloads constructor(
     context: Context, attrs: AttributeSet? = null, defStyleAttr: Int = 0,
     defStyleRes: Int = 0
@@ -51,6 +53,9 @@ class LottieAnimationView @JvmOverloads constructor(
         a.recycle()
     }
 
+    /**
+     * Replaces the currently bound drawable resource.
+     */
     fun setLottieDrawableResource(@DrawableRes resId: Int) {
         if (this@LottieAnimationView.resId != resId) {
             this@LottieAnimationView.resId = resId
@@ -72,22 +77,37 @@ class LottieAnimationView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Resizes the underlying drawable buffer in pixels.
+     */
     fun setSize(width: Int, height: Int) {
         drawable?.setSize(width, height)
     }
 
+    /**
+     * Starts playback from the first configured frame.
+     */
     fun startAnimation() {
         drawable?.start()
     }
 
+    /**
+     * Stops playback and clears scheduled frame updates.
+     */
     fun stopAnimation() {
         drawable?.stop()
     }
 
+    /**
+     * Pauses playback without resetting the current frame.
+     */
     fun pauseAnimation() {
         drawable?.pause()
     }
 
+    /**
+     * Resumes playback from the current frame.
+     */
     fun resumeAnimation() {
         drawable?.resume()
     }
@@ -126,6 +146,9 @@ class LottieAnimationView @JvmOverloads constructor(
         invalidate()
     }
 
+    /**
+     * Registers a listener for playback lifecycle callbacks.
+     */
     fun setAnimationListener(listener: LottieAnimationListener?) {
         this@LottieAnimationView.listener = listener
     }

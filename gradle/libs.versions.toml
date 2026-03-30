@@ -8,6 +8,9 @@ targetSdk = "34"
 agp = "8.3.0"
 kotlin = "1.9.23"
 ndkVersion = "25.2.9519653"
+composeCompiler = "1.5.11"
+composeBom = "2024.04.01"
+activityCompose = "1.8.2"
 
 # AndroidX
 androidx-annotation = "1.7.1"
@@ -29,6 +32,12 @@ appcompatV7 = "28.0.0"
 # AndroidX
 androidx-annotation = { module = "androidx.annotation:annotation", version.ref = "androidx-annotation" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx-core" }
+androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "activityCompose" }
+androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "composeBom" }
+androidx-compose-foundation = { module = "androidx.compose.foundation:foundation" }
+androidx-compose-runtime = { module = "androidx.compose.runtime:runtime" }
+androidx-compose-ui = { module = "androidx.compose.ui:ui" }
+androidx-compose-ui-graphics = { module = "androidx.compose.ui:ui-graphics" }
 
 # Testing
 androidx-test-runner = { module = "androidx.test:runner", version.ref = "androidx-test-runner" }
