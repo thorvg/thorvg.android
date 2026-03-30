@@ -37,6 +37,7 @@ dependencies {
     implementation(project(":lottie"))
     implementation(libs.androidx.annotation)
     testImplementation(libs.junit)
+    androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.runner)
     androidTestImplementation(libs.espresso.core)
 }
