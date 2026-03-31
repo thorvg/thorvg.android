@@ -22,28 +22,84 @@
 
 package org.thorvg.sample
 
-import android.app.Activity
+import android.content.Intent
 import android.os.Bundle
-import android.view.View
-import android.widget.TextView
-import org.thorvg.lottie.view.LottieAnimationView
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.Button
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.unit.dp
+import org.thorvg.sample.compose.ComposeSampleActivity
+import org.thorvg.sample.view.ViewSampleActivity
 
-class MainActivity : Activity() {
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_main)
-
-        val lottieView = findViewById<LottieAnimationView>(R.id.lottie_view)
-
-        findViewById<View>(R.id.anim_state).setOnClickListener { v: View ->
-            val button = v as TextView
-            if ("Pause".contentEquals(button.text)) {
-                lottieView.pauseAnimation()
-                button.text = "Resume"
-            } else {
-                lottieView.resumeAnimation()
-                button.text = "Pause"
+        setContent {
+            MaterialTheme {
+                Surface(modifier = Modifier.fillMaxSize()) {
+                    MainMenu(
+                        onOpenCompose = {
+                            startActivity(Intent(this, ComposeSampleActivity::class.java))
+                        },
+                        onOpenView = {
+                            startActivity(Intent(this, ViewSampleActivity::class.java))
+                        }
+                    )
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun MainMenu(
+    onOpenCompose: () -> Unit,
+    onOpenView: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(Color(0xFFF3EFE7))
+            .padding(24.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically)
+    ) {
+        Text(
+            text = stringResource(R.string.sample_menu_title),
+            style = MaterialTheme.typography.headlineMedium
+        )
+        Text(
+            text = stringResource(R.string.sample_menu_subtitle),
+            style = MaterialTheme.typography.bodyLarge,
+            color = Color(0xFF5B5247)
+        )
+
+        Button(
+            onClick = onOpenCompose,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.sample_open_compose))
+        }
+
+        Button(
+            onClick = onOpenView,
+            modifier = Modifier.fillMaxWidth()
+        ) {
+            Text(stringResource(R.string.sample_open_view))
         }
     }
 }

@@ -9,6 +9,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Thorvgandroid">
         <activity
+            android:name=".view.ViewSampleActivity"
+            android:exported="false" />
+        <activity
+            android:name=".compose.ComposeSampleActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
