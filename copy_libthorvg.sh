@@ -1,36 +1,52 @@
 #!/bin/bash
 
-abi=$1
+set -e
 
-# Check if lib directory exists in thorvg directory
-if [ ! -d "thorvg/lib" ]; then
-    echo "lib directory doesn't exist in thorvg directory. Creating lib directory..."
-    mkdir thorvg/lib
-    echo "lib directory created successfully."
-fi
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)"
+THORVG_DIR="$ROOT_DIR/thorvg"
 
-# Check ABI and copy libthorvg.a file accordingly
-if [ "$abi" -eq 1 ]; then
-    abi_dir="arm64-v8a"
-elif [ "$abi" -eq 2 ]; then
-    abi_dir="x86_64"
-else
-    echo "Unsupported ABI."
-    exit 1
-fi
+abi="${1:-all}"
 
-# Check if ABI directory exists in thorvg/lib directory
-if [ ! -d "thorvg/lib/$abi_dir" ]; then
-    echo "$abi_dir directory doesn't exist in thorvg/lib directory. Creating $abi_dir directory..."
-    mkdir "thorvg/lib/$abi_dir"
-    echo "$abi_dir directory created successfully."
-fi
+copy_one() {
+    abi_dir="$1"
+    lib_source="$THORVG_DIR/build-${abi_dir}/src/libthorvg.a"
 
-# Copy libthorvg.a file to the appropriate directory
-if [ "$abi" -eq 1 ]; then
-    cp "thorvg/build/src/libthorvg.a" "thorvg/lib/arm64-v8a/"
-    echo "libthorvg.a copied to thorvg/lib/arm64-v8a/"
-elif [ "$abi" -eq 2 ]; then
-    cp "thorvg/build/src/libthorvg.a" "thorvg/lib/x86_64/"
-    echo "libthorvg.a copied to thorvg/lib/x86_64/"
-fi
+    if [ ! -d "$THORVG_DIR/lib" ]; then
+        echo "lib directory doesn't exist in thorvg directory. Creating lib directory..."
+        mkdir -p "$THORVG_DIR/lib"
+        echo "lib directory created successfully."
+    fi
+
+    if [ ! -d "$THORVG_DIR/lib/$abi_dir" ]; then
+        echo "$abi_dir directory doesn't exist in thorvg/lib directory. Creating $abi_dir directory..."
+        mkdir -p "$THORVG_DIR/lib/$abi_dir"
+        echo "$abi_dir directory created successfully."
+    fi
+
+    if [ ! -f "$lib_source" ]; then
+        echo "libthorvg.a not found: $lib_source"
+        echo "Run ./build_libthorvg.sh ${abi_dir} first."
+        exit 1
+    fi
+
+    cp "$lib_source" "$THORVG_DIR/lib/$abi_dir/"
+    echo "libthorvg.a copied to thorvg/lib/$abi_dir/"
+}
+
+case "$abi" in
+    arm64-v8a)
+        copy_one "arm64-v8a"
+        ;;
+    x86_64)
+        copy_one "x86_64"
+        ;;
+    all)
+        copy_one "arm64-v8a"
+        copy_one "x86_64"
+        ;;
+    *)
+        echo "Unsupported ABI argument: $abi"
+        echo "Use arm64-v8a, x86_64, or all."
+        exit 1
+        ;;
+esac

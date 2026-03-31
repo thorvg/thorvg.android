@@ -20,28 +20,54 @@ $cd thorvg.android
 $git submodule update --init --recursive
 ```
 Please refer to [ThorVG](https://github.com/thorvg/thorvg) for detailed information on setting up the ThorVG build environment.
+The project requires Java 17 to run Gradle and the Android Gradle Plugin.
+The automated ThorVG build also requires `meson`. `ninja` is resolved automatically from the Android SDK CMake installation when available, or can be provided from your system `PATH`.
 <br />
 
 ## ThorVG Cross-Build 
 
 Follow these steps to cross-build ThorVG Android library.
 
-Prepare for cross-building by executing the lottie:setupCrossBuild task.
-To build for arm64, use 1 as the value for 'abi'. For x86_64, use 2.
+The simplest path is to let Gradle generate the cross files, build ThorVG, and copy the resulting static libraries in one step.
+
+If `abi` is omitted, the default is `all`, which builds both `arm64-v8a` and `x86_64`.
+
+Linux / macOS / WSL:
 ```
-gradle lottie:setupCrossBuild -Pabi=1
+./gradlew lottie:buildThorvg
 ```
 
-Execute build_libthorvg.sh script to perform cross-building.
+Windows PowerShell:
 ```
-./build_libthorvg.sh
+.\gradlew.bat lottie:buildThorvg
 ```
 
-Copy the generated **libthorvg.a** to the thorvg/lib directory using the copy_libthorvg.sh script.
-If the first argument is 1, the library will be copied to the thorvg/lib/arm64-v8a/ directory. If it is 2, it will be copied to the thorvg/lib/x86_64/ directory.
+If `meson` is not on PATH, you can pass it explicitly:
 ```
-./copy_libthorvg.sh 1
+.\gradlew.bat lottie:buildThorvg -PmesonPath="C:\path\to\meson.exe"
 ```
+
+Single-ABI builds are also supported:
+```
+./gradlew lottie:buildThorvg -Pabi=arm64-v8a
+./gradlew lottie:buildThorvg -Pabi=x86_64
+```
+
+This workflow:
+1. runs `lottie:setupCrossBuild`
+2. generates cross files under `lottie/build/tmp/`, for example:
+- `android_cross_arm64-v8a.txt`
+- `android_cross_x86_64.txt`
+3. runs `meson` and `ninja`
+4. copies the generated `libthorvg.a` files into:
+   - `thorvg/lib/arm64-v8a/`
+   - `thorvg/lib/x86_64/`
+
+If you still want the manual bash-based flow, the helper scripts remain available:
+- `./build_libthorvg.sh`
+- `./copy_libthorvg.sh`
+
+These scripts default to `all` when no ABI argument is provided, and can also be run with `arm64-v8a` or `x86_64`.
 
 ## ThorVG-Android Build
 
