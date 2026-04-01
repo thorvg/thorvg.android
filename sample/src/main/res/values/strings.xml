@@ -10,4 +10,9 @@
     <string name="sample_resume">Resume</string>
     <string name="sample_stop">Stop</string>
     <string name="sample_replay">Replay</string>
+    <string name="sample_navigate_up">Back</string>
+    <string name="sample_running">Running</string>
+    <string name="sample_idle">Idle</string>
+    <string name="sample_frame_format">Frame %1$d</string>
+    <string name="sample_speed_format">Speed %1$.1fx</string>
 </resources>

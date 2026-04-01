@@ -284,6 +284,12 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     }
 
     /**
+     * Current frame index being rendered by this drawable.
+     */
+    val currentFrame: Int
+        get() = frame
+
+    /**
      * Registers a listener for playback lifecycle callbacks.
      */
     fun setAnimationListener(listener: LottieAnimationListener?) {
