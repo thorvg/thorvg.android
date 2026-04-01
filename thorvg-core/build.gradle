@@ -1,0 +1,258 @@
+plugins {
+    alias(libs.plugins.android.library)
+    alias(libs.plugins.kotlin.android)
+}
+
+android {
+    compileSdk libs.versions.compileSdk.get().toInteger()
+    ndkVersion libs.versions.ndkVersion.get()
+
+    defaultConfig {
+        minSdk libs.versions.minSdk.get().toInteger()
+
+        testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
+
+        externalNativeBuild {
+            cmake {
+                arguments '-DANDROID_STL=c++_static'
+            }
+        }
+    }
+
+    buildTypes {
+        debug {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+
+        release {
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'),
+                    'proguard-rules.pro'
+        }
+    }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    kotlinOptions {
+        jvmTarget = "1.8"
+    }
+
+    externalNativeBuild {
+        cmake {
+            path 'src/main/cpp/CMakeLists.txt'
+        }
+    }
+    namespace 'org.thorvg.core'
+    kotlinOptions {
+        jvmTarget = '1.8'
+    }
+}
+
+dependencies {
+    implementation libs.androidx.annotation
+}
+
+def resolveCrossBuildTargets = { Project project ->
+    def abi = project.findProperty('abi') ?: 'all'
+    switch (abi) {
+        case 'arm64-v8a':
+            return [[abiDir: 'arm64-v8a', inputFileName: 'android_aarch64']]
+        case 'x86_64':
+            return [[abiDir: 'x86_64', inputFileName: 'android_x86_64']]
+        case 'all':
+            return [
+                    [abiDir: 'arm64-v8a', inputFileName: 'android_aarch64'],
+                    [abiDir: 'x86_64', inputFileName: 'android_x86_64']
+            ]
+        default:
+            throw new GradleException("Invalid abi value '${abi}'. Use arm64-v8a, x86_64, or all.")
+    }
+}
+
+def resolveMesonExecutable = { Project project ->
+    def mesonPath = project.findProperty('mesonPath')
+    if (mesonPath) {
+        def mesonFile = project.file(mesonPath)
+        if (!mesonFile.exists()) {
+            throw new GradleException("meson executable not found: ${mesonFile.absolutePath}")
+        }
+        return mesonFile.absolutePath
+    }
+    return 'meson'
+}
+
+def resolveNinjaExecutable = { Project project ->
+    def ninjaPath = project.findProperty('ninjaPath')
+    if (ninjaPath) {
+        def ninjaFile = project.file(ninjaPath)
+        if (!ninjaFile.exists()) {
+            throw new GradleException("ninja executable not found: ${ninjaFile.absolutePath}")
+        }
+        return ninjaFile.absolutePath
+    }
+
+    def cmakeVersion = libs.versions.cmake.get()
+    def sdkDir = android.sdkDirectory
+    def ninjaFromSdk = new File(sdkDir, "cmake/${cmakeVersion}/bin/ninja.exe")
+    if (ninjaFromSdk.exists()) {
+        return ninjaFromSdk.absolutePath
+    }
+
+    return 'ninja'
+}
+
+def resolveNativeRootDir = { Project project ->
+    if (!org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+        return project.rootProject.rootDir
+    }
+    def tempDir = System.getenv('TEMP') ?: System.getProperty('java.io.tmpdir')
+    return new File(tempDir, 'thorvg-android-native')
+}
+
+tasks.register('setupCrossBuild') {
+    inputs.property("abi", providers.gradleProperty('abi').orElse('all'))
+
+    doLast {
+        def targets = resolveCrossBuildTargets(project)
+        def nativeRootDir = resolveNativeRootDir(project)
+        nativeRootDir.mkdirs()
+
+        def androidConfig = android
+        def sdkPath = androidConfig.sdkDirectory.toPath().toString()
+        def ndkVersion = androidConfig.ndkVersion
+        def targetApi = androidConfig.defaultConfig.minSdk
+
+        // Determine the host tag based on the operating system
+        def hostTag =
+                System.properties['os.name'].toLowerCase().contains('mac') ? 'darwin-x86_64' :
+                        System.properties['os.name'].toLowerCase().contains('linux') ? 'linux-x86_64' :
+                                'windows-x86_64'
+
+        targets.each { target ->
+            println "Selected abi=${target.abiDir}"
+
+            def inputFile = rootProject.file("thorvg/cross/${target.inputFileName}.txt")
+            def outputFile = new File(nativeRootDir, "thorvg-core/build/tmp/android_cross_${target.abiDir}.txt")
+
+            if (!inputFile.exists()) {
+                throw new GradleException("Cross build template not found: ${inputFile.absolutePath}")
+            }
+
+            outputFile.parentFile.mkdirs()
+
+            // Read the input file
+            def inputText = inputFile.text
+
+            // Replace placeholders with actual values in the input text
+            def escapedNdkPath = java.util.regex.Matcher.quoteReplacement("${sdkPath}/ndk/${ndkVersion}".replace('\\', '/'))
+            def escapedHostTag = java.util.regex.Matcher.quoteReplacement(hostTag)
+            def escapedApi = java.util.regex.Matcher.quoteReplacement(targetApi.toString())
+            def modifiedText = inputText
+                    .replaceAll('NDK', escapedNdkPath)
+                    .replaceAll('HOST_TAG', escapedHostTag)
+                    .replaceAll('API', escapedApi)
+
+            if (hostTag == 'windows-x86_64') {
+                modifiedText = modifiedText
+                        .replace("clang++'", "clang++.cmd'")
+                        .replace("llvm-ar'", "llvm-ar.exe'")
+                        .replace("llvm-as'", "llvm-as.exe'")
+                        .replace("llvm-ranlib'", "llvm-ranlib.exe'")
+                        .replace("/ld'", "/ld.exe'")
+                        .replace("llvm-strip'", "llvm-strip.exe'")
+            }
+
+            // Write the modified text to the output file
+            outputFile.write(modifiedText)
+            println "Cross build file generated: ${outputFile.absolutePath}"
+        }
+
+        println "Cross build setup is completed."
+    }
+}
+
+tasks.register('buildThorvg') {
+    dependsOn 'setupCrossBuild'
+    inputs.property("abi", providers.gradleProperty('abi').orElse('all'))
+
+    doLast {
+        def targets = resolveCrossBuildTargets(project)
+        def nativeRootDir = resolveNativeRootDir(project)
+        nativeRootDir.mkdirs()
+        def thorvgSourceDir = rootProject.file('thorvg')
+        def nativeThorvgDir = org.gradle.internal.os.OperatingSystem.current().isWindows()
+                ? new File(nativeRootDir, 'thorvg-src')
+                : thorvgSourceDir
+        def libDir = rootProject.file('thorvg/lib')
+        def mesonExecutable = resolveMesonExecutable(project)
+        def ninjaExecutable = resolveNinjaExecutable(project)
+        def mesonEnvPath = new File(ninjaExecutable).parent + File.pathSeparator + System.getenv('PATH')
+        libDir.mkdirs()
+
+        if (org.gradle.internal.os.OperatingSystem.current().isWindows()) {
+            delete(nativeThorvgDir)
+            copy {
+                from thorvgSourceDir
+                into nativeThorvgDir
+                exclude 'build*/**', 'lib/**', '.git/**'
+            }
+        }
+
+        targets.each { target ->
+            def crossFile = new File(nativeRootDir, "thorvg-core/build/tmp/android_cross_${target.abiDir}.txt")
+            if (!crossFile.exists()) {
+                throw new GradleException("Cross build file not found: ${crossFile.absolutePath}")
+            }
+
+            def buildDir = new File(nativeRootDir, "build-gradle-${target.abiDir}")
+            def outputDir = new File(libDir, target.abiDir)
+            def staticLib = new File(buildDir, 'src/libthorvg.a')
+
+            println "Building ThorVG for ${target.abiDir}"
+            delete(buildDir)
+
+            try {
+                exec {
+                    workingDir nativeThorvgDir
+                    environment 'PATH', mesonEnvPath
+                    environment 'NINJA', ninjaExecutable
+                    commandLine mesonExecutable, 'setup', buildDir.absolutePath, nativeThorvgDir.absolutePath,
+                            '-Dloaders=lottie, webp, jpg, png',
+                            "--cross-file=${crossFile.absolutePath}",
+                            '-Ddefault_library=static',
+                            '--backend=ninja'
+                }
+            } catch (Exception e) {
+                def mesonLog = new File(buildDir, 'meson-logs/meson-log.txt')
+                def detail = mesonLog.exists() ? " See ${mesonLog.absolutePath} for details." : ''
+                throw new GradleException(
+                        "Failed to run Meson for ${target.abiDir}. Original error: ${e.message}.${detail}",
+                        e
+                )
+            }
+
+            exec {
+                workingDir nativeThorvgDir
+                environment 'PATH', mesonEnvPath
+                environment 'NINJA', ninjaExecutable
+                commandLine mesonExecutable, 'compile', '-C', buildDir.absolutePath
+            }
+
+            if (!staticLib.exists()) {
+                throw new GradleException("Built library not found: ${staticLib.absolutePath}")
+            }
+
+            outputDir.mkdirs()
+            copy {
+                from staticLib
+                into outputDir
+            }
+            println "Copied libthorvg.a to ${outputDir.absolutePath}"
+        }
+    }
+}

@@ -47,6 +47,6 @@ dependencies {
     implementation libs.androidx.compose.material3
     implementation libs.androidx.compose.runtime
     implementation libs.androidx.compose.ui
-    implementation(project(":lottie-compose"))
-    implementation(project(":lottie-view"))
+    implementation(project(":thorvg-compose"))
+    implementation(project(":thorvg-view"))
 }

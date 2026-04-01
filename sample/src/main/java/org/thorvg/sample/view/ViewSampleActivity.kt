@@ -30,7 +30,7 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import org.thorvg.lottie.view.LottieAnimationView
+import org.thorvg.view.lottie.LottieAnimationView
 import org.thorvg.sample.R
 
 class ViewSampleActivity : AppCompatActivity() {

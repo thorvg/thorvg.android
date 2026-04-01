@@ -48,10 +48,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.thorvg.lottie.LottieConstants
-import org.thorvg.lottie.compose.ThorvgLottie
-import org.thorvg.lottie.compose.ThorvgLottieState
-import org.thorvg.lottie.compose.rememberThorvgLottieState
+import org.thorvg.core.lottie.LottieConstants
+import org.thorvg.compose.lottie.Lottie
+import org.thorvg.compose.lottie.LottieState
+import org.thorvg.compose.lottie.rememberLottieState
 import org.thorvg.sample.R
 
 class ComposeSampleActivity : ComponentActivity() {
@@ -70,7 +70,7 @@ class ComposeSampleActivity : ComponentActivity() {
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun ComposeSampleScreen(onNavigateUp: () -> Unit) {
-    val lottieState = rememberThorvgLottieState(
+    val lottieState = rememberLottieState(
         isPlaying = true,
         repeatCount = LottieConstants.INFINITE
     )
@@ -98,7 +98,7 @@ private fun ComposeSampleScreen(onNavigateUp: () -> Unit) {
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            ThorvgLottie(
+            Lottie(
                 resId = R.raw.swinging,
                 state = lottieState,
                 modifier = Modifier
@@ -150,7 +150,7 @@ private fun ComposeSampleScreen(onNavigateUp: () -> Unit) {
 }
 
 @Composable
-private fun ComposeStatusPanel(state: ThorvgLottieState) {
+private fun ComposeStatusPanel(state: LottieState) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
         Text(
             text = if (state.isRunning) "Running" else "Idle",
@@ -170,7 +170,7 @@ private fun ComposeStatusPanel(state: ThorvgLottieState) {
 @Composable
 private fun ComposeSpeedButton(
     label: String,
-    state: ThorvgLottieState,
+    state: LottieState,
     speed: Float
 ) {
     Button(onClick = { state.speed = speed }) {
