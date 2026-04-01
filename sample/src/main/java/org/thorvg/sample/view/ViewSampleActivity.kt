@@ -22,31 +22,111 @@
 
 package org.thorvg.sample.view
 
-import android.app.Activity
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
+import androidx.appcompat.app.AppCompatActivity
+import androidx.appcompat.widget.Toolbar
 import org.thorvg.lottie.view.LottieAnimationView
 import org.thorvg.sample.R
 
-class ViewSampleActivity : Activity() {
+class ViewSampleActivity : AppCompatActivity() {
+    private val statusHandler = Handler(Looper.getMainLooper())
+    private val statusRunnable = object : Runnable {
+        override fun run() {
+            updateStatus()
+            statusHandler.postDelayed(this, 100L)
+        }
+    }
+
+    private lateinit var lottieView: LottieAnimationView
+    private lateinit var stateButton: Button
+    private lateinit var frameText: TextView
+    private lateinit var speedText: TextView
+    private lateinit var runningText: TextView
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_view_sample)
 
         title = getString(R.string.sample_view_title)
+        setSupportActionBar(findViewById<Toolbar>(R.id.toolbar))
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
-        val lottieView = findViewById<LottieAnimationView>(R.id.lottie_view)
+        lottieView = findViewById(R.id.lottie_view)
+        stateButton = findViewById(R.id.anim_state)
+        frameText = findViewById(R.id.anim_frame)
+        speedText = findViewById(R.id.anim_speed)
+        runningText = findViewById(R.id.anim_running)
 
-        findViewById<View>(R.id.anim_state).setOnClickListener { view ->
-            val button = view as TextView
-            if (getString(R.string.sample_pause).contentEquals(button.text)) {
+        findViewById<View>(R.id.anim_state).setOnClickListener {
+            if (lottieView.isAnimating()) {
                 lottieView.pauseAnimation()
-                button.text = getString(R.string.sample_resume)
             } else {
                 lottieView.resumeAnimation()
-                button.text = getString(R.string.sample_pause)
             }
+            updateStatus()
+        }
+
+        findViewById<View>(R.id.anim_stop).setOnClickListener {
+            lottieView.stopAnimation()
+            updateStatus()
+        }
+
+        findViewById<View>(R.id.anim_replay).setOnClickListener {
+            lottieView.startAnimation()
+            updateStatus()
+        }
+
+        findViewById<View>(R.id.speed_half).setOnClickListener {
+            lottieView.setSpeed(0.5f)
+            updateStatus()
+        }
+
+        findViewById<View>(R.id.speed_normal).setOnClickListener {
+            lottieView.setSpeed(1f)
+            updateStatus()
+        }
+
+        findViewById<View>(R.id.speed_double).setOnClickListener {
+            lottieView.setSpeed(2f)
+            updateStatus()
+        }
+
+        updateStatus()
+    }
+
+    override fun onStart() {
+        super.onStart()
+        statusHandler.post(statusRunnable)
+    }
+
+    override fun onStop() {
+        statusHandler.removeCallbacks(statusRunnable)
+        super.onStop()
+    }
+
+    override fun onSupportNavigateUp(): Boolean {
+        finish()
+        return true
+    }
+
+    private fun updateStatus() {
+        val isAnimating = lottieView.isAnimating()
+        runningText.text = if (isAnimating) {
+            getString(R.string.sample_running)
+        } else {
+            getString(R.string.sample_idle)
+        }
+        frameText.text = getString(R.string.sample_frame_format, lottieView.getCurrentFrame())
+        speedText.text = getString(R.string.sample_speed_format, lottieView.getSpeed())
+        stateButton.text = if (isAnimating) {
+            getString(R.string.sample_pause)
+        } else {
+            getString(R.string.sample_resume)
         }
     }
 }

@@ -30,6 +30,7 @@ import android.os.Parcelable
 import android.util.AttributeSet
 import android.view.View
 import androidx.annotation.DrawableRes
+import androidx.annotation.FloatRange
 import org.thorvg.lottie.LottieAnimationListener
 
 /**
@@ -114,6 +115,34 @@ class LottieAnimationView @JvmOverloads constructor(
      */
     fun resumeAnimation() {
         drawable?.resume()
+    }
+
+    /**
+     * Returns whether the underlying drawable is actively playing.
+     */
+    fun isAnimating(): Boolean {
+        return drawable?.isRunning == true
+    }
+
+    /**
+     * Returns the current frame index.
+     */
+    fun getCurrentFrame(): Int {
+        return drawable?.currentFrame ?: 0
+    }
+
+    /**
+     * Updates the playback speed multiplier.
+     */
+    fun setSpeed(@FloatRange(from = 0.0) speed: Float) {
+        drawable?.speed = speed
+    }
+
+    /**
+     * Returns the playback speed multiplier.
+     */
+    fun getSpeed(): Float {
+        return drawable?.speed ?: 1f
     }
 
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {

@@ -28,15 +28,20 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -55,7 +60,7 @@ class ComposeSampleActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    ComposeSampleScreen()
+                    ComposeSampleScreen(onNavigateUp = ::finish)
                 }
             }
         }
@@ -63,71 +68,83 @@ class ComposeSampleActivity : ComponentActivity() {
 }
 
 @Composable
-private fun ComposeSampleScreen() {
+@OptIn(ExperimentalMaterial3Api::class)
+private fun ComposeSampleScreen(onNavigateUp: () -> Unit) {
     val lottieState = rememberThorvgLottieState(
         isPlaying = true,
         repeatCount = LottieConstants.INFINITE
     )
 
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF6F0E8))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(20.dp)
-    ) {
-        Text(
-            text = stringResource(R.string.sample_compose_title),
-            style = MaterialTheme.typography.headlineMedium
-        )
-
-        ThorvgLottie(
-            resId = R.raw.swinging,
-            state = lottieState,
-            modifier = Modifier
-                .size(220.dp)
-                .background(Color.White)
-        )
-
-        ComposeStatusPanel(state = lottieState)
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
-        ) {
-            Button(onClick = {
-                if (lottieState.isPlaying) {
-                    lottieState.pause()
-                } else {
-                    lottieState.resume()
-                }
-            }) {
-                Text(
-                    if (lottieState.isPlaying) {
-                        stringResource(R.string.sample_pause)
-                    } else {
-                        stringResource(R.string.sample_resume)
+    Scaffold(
+        containerColor = Color(0xFFF6F0E8),
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.sample_compose_title)) },
+                navigationIcon = {
+                    TextButton(onClick = onNavigateUp) {
+                        Text(stringResource(R.string.sample_navigate_up))
                     }
-                )
-            }
-
-            Button(onClick = { lottieState.stop() }) {
-                Text(stringResource(R.string.sample_stop))
-            }
-
-            Button(onClick = { lottieState.play() }) {
-                Text(stringResource(R.string.sample_replay))
-            }
+                }
+            )
         }
-
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF6F0E8))
+                .padding(innerPadding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
-            ComposeSpeedButton(label = "0.5x", state = lottieState, speed = 0.5f)
-            ComposeSpeedButton(label = "1x", state = lottieState, speed = 1f)
-            ComposeSpeedButton(label = "2x", state = lottieState, speed = 2f)
+            ThorvgLottie(
+                resId = R.raw.swinging,
+                state = lottieState,
+                modifier = Modifier
+                    .size(220.dp)
+                    .background(Color.White)
+            )
+
+            ComposeStatusPanel(state = lottieState)
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+            ) {
+                Button(onClick = {
+                    if (lottieState.isPlaying) {
+                        lottieState.pause()
+                    } else {
+                        lottieState.resume()
+                    }
+                }) {
+                    Text(
+                        if (lottieState.isPlaying) {
+                            stringResource(R.string.sample_pause)
+                        } else {
+                            stringResource(R.string.sample_resume)
+                        }
+                    )
+                }
+
+                Button(onClick = { lottieState.stop() }) {
+                    Text(stringResource(R.string.sample_stop))
+                }
+
+                Button(onClick = { lottieState.play() }) {
+                    Text(stringResource(R.string.sample_replay))
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterHorizontally)
+            ) {
+                ComposeSpeedButton(label = "0.5x", state = lottieState, speed = 0.5f)
+                ComposeSpeedButton(label = "1x", state = lottieState, speed = 1f)
+                ComposeSpeedButton(label = "2x", state = lottieState, speed = 2f)
+            }
         }
     }
 }
