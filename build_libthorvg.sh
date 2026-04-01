@@ -7,7 +7,7 @@ ABI_ARG="${1:-all}"
 
 build_one() {
     abi_dir="$1"
-    cross_file="$ROOT_DIR/lottie/build/tmp/android_cross_${abi_dir}.txt"
+    cross_file="$ROOT_DIR/thorvg-core/build/tmp/android_cross_${abi_dir}.txt"
     build_dir="build-${abi_dir}"
 
     if [ ! -f "$cross_file" ]; then

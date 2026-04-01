@@ -21,7 +21,7 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <org.thorvg.lottie.view.LottieAnimationView
+        <org.thorvg.view.LottieAnimationView
             android:id="@+id/lottie_view"
             android:layout_width="220dp"
             android:layout_height="220dp"

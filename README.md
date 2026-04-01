@@ -34,28 +34,28 @@ If `abi` is omitted, the default is `all`, which builds both `arm64-v8a` and `x8
 
 Linux / macOS / WSL:
 ```
-./gradlew lottie:buildThorvg
+./gradlew thorvg-core:buildThorvg
 ```
 
 Windows PowerShell:
 ```
-.\gradlew.bat lottie:buildThorvg
+.\gradlew.bat thorvg-core:buildThorvg
 ```
 
 If `meson` is not on PATH, you can pass it explicitly:
 ```
-.\gradlew.bat lottie:buildThorvg -PmesonPath="C:\path\to\meson.exe"
+.\gradlew.bat thorvg-core:buildThorvg -PmesonPath="C:\path\to\meson.exe"
 ```
 
 Single-ABI builds are also supported:
 ```
-./gradlew lottie:buildThorvg -Pabi=arm64-v8a
-./gradlew lottie:buildThorvg -Pabi=x86_64
+./gradlew thorvg-core:buildThorvg -Pabi=arm64-v8a
+./gradlew thorvg-core:buildThorvg -Pabi=x86_64
 ```
 
 This workflow:
-1. runs `lottie:setupCrossBuild`
-2. generates cross files under `lottie/build/tmp/`, for example:
+1. runs `thorvg-core:setupCrossBuild`
+2. generates cross files under `thorvg-core/build/tmp/`, for example:
 - `android_cross_arm64-v8a.txt`
 - `android_cross_x86_64.txt`
 3. runs `meson` and `ninja`
