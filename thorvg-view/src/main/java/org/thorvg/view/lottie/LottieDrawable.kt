@@ -38,16 +38,14 @@ import android.util.Log
 import android.util.Xml
 import androidx.annotation.DrawableRes
 import androidx.annotation.FloatRange
-import androidx.annotation.RawRes
+import org.thorvg.core.lottie.LottieComposition
 import org.thorvg.core.lottie.LottieConstants
-import org.thorvg.core.lottie.LottieNativeBindings
+import org.thorvg.core.lottie.LottieRenderState
 import org.thorvg.core.lottie.LottieRepeatMode
 import org.thorvg.view.R
 import org.xmlpull.v1.XmlPullParser
 import org.xmlpull.v1.XmlPullParserException
-import java.io.BufferedReader
 import java.io.IOException
-import java.io.InputStreamReader
 
 /**
  * Drawable adapter that renders a ThorVG Lottie composition into an Android [Canvas].
@@ -321,7 +319,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
         val rawRes = attributes.getResourceId(R.styleable.LottieDrawable_rawRes, 0)
         require(rawRes != 0) { "" }
 
-        state.composition = ViewLottieComposition.fromRawResource(resources, rawRes)
+        state.composition = LottieComposition.fromRawResource(resources, rawRes)
         state.composition?.let { composition ->
             setLastFrame(attributes.getInt(R.styleable.LottieDrawable_frameTo, composition.frameCount))
         }
@@ -347,9 +345,9 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     }
 
     internal class LottieDrawableState() : ConstantState() {
-        private val renderState = ViewLottieRenderState()
+        private val renderState = LottieRenderState()
 
-        var composition: ViewLottieComposition?
+        var composition: LottieComposition?
             get() = renderState.composition
             set(value) {
                 renderState.composition = value
@@ -518,181 +516,5 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
                 null
             }
         }
-    }
-}
-
-internal class ViewLottieComposition private constructor(
-    private val nativeLottie: NativeLottie
-) {
-    constructor(content: String) : this(NativeLottie(content))
-
-    val frameCount: Int
-        get() = nativeLottie.frameCount
-
-    val duration: Long
-        get() = nativeLottie.duration
-
-    fun setSize(width: Int, height: Int) {
-        require(width > 0) { "ViewLottieComposition requires width > 0" }
-        require(height > 0) { "ViewLottieComposition requires height > 0" }
-        nativeLottie.setBufferSize(width, height)
-    }
-
-    fun renderFrame(frame: Int): Bitmap? {
-        return nativeLottie.getBuffer(frame)
-    }
-
-    fun release() {
-        nativeLottie.destroy()
-    }
-
-    fun copy(): ViewLottieComposition {
-        return ViewLottieComposition(nativeLottie.copy())
-    }
-
-    fun isValid(): Boolean {
-        return nativeLottie.nativePtr != 0L
-    }
-
-    companion object {
-        @JvmStatic
-        fun fromRawResource(resources: Resources, @RawRes resId: Int): ViewLottieComposition {
-            return ViewLottieComposition(loadJsonFile(resources, resId))
-        }
-
-        @Throws(IOException::class)
-        private fun loadJsonFile(resources: Resources, @RawRes resId: Int): String {
-            return try {
-                resources.openRawResource(resId).use { inputStream ->
-                    BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                        reader.lineSequence().joinToString("")
-                    }
-                }
-            } catch (e: IOException) {
-                throw IOException("Failed to read a lottie file.")
-            }
-        }
-    }
-}
-
-private class ViewLottieRenderState {
-    var composition: ViewLottieComposition? = null
-
-    var baseWidth = 0f
-    var baseHeight = 0f
-    var width = 0
-    var height = 0
-
-    var repeatMode = LottieConstants.RESTART
-        set(@LottieRepeatMode value) {
-            field = value
-            framesPerUpdate = if (field == LottieConstants.RESTART) 1 else -1
-        }
-
-    var repeatCount = 0
-    var speed = 1f
-        set(@FloatRange(from = 0.0) value) {
-            field = value
-            updateFrameInterval()
-        }
-
-    var firstFrame = 0
-        set(value) {
-            field = value.coerceAtMost(lastFrame)
-            updateFrameInterval()
-        }
-
-    var lastFrame = 0
-        set(value) {
-            composition?.let {
-                field = value.coerceAtMost(it.frameCount)
-                updateFrameInterval()
-            }
-        }
-
-    var frameInterval = 0L
-    var framesPerUpdate = 1
-    var autoPlay = false
-
-    fun releaseComposition() {
-        composition?.release()
-        composition = null
-    }
-
-    fun valid(): Boolean {
-        return composition?.isValid() == true
-    }
-
-    fun setCompositionSize(width: Int, height: Int) {
-        if (width != this.width || height != this.height) {
-            this.width = width
-            this.height = height
-            composition?.setSize(width, height)
-        }
-    }
-
-    fun renderFrame(frame: Int): Bitmap? {
-        return composition?.renderFrame(frame)
-    }
-
-    private fun updateFrameInterval() {
-        val currentComposition = composition ?: return
-        val totalFrames = lastFrame - firstFrame
-        frameInterval = when {
-            totalFrames <= 0 -> 0L
-            speed <= 0f -> 0L
-            else -> (currentComposition.duration / totalFrames / speed).toLong()
-        }
-    }
-}
-
-private class NativeLottie {
-    val jsonContent: String
-    val nativePtr: Long
-    var frameCount: Int = 0
-    var duration: Long = 0
-    private var buffer: Bitmap? = null
-
-    constructor(copy: NativeLottie) {
-        jsonContent = copy.jsonContent
-        nativePtr = init(copy.jsonContent)
-        frameCount = copy.frameCount
-        duration = copy.duration
-    }
-
-    constructor(content: String) {
-        jsonContent = content
-        nativePtr = init(jsonContent)
-    }
-
-    fun copy(): NativeLottie {
-        return NativeLottie(this)
-    }
-
-    fun destroy() {
-        buffer?.recycle()
-        buffer = null
-        LottieNativeBindings.nDestroyLottie(nativePtr)
-    }
-
-    fun setBufferSize(width: Int, height: Int) {
-        buffer?.recycle()
-        buffer = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        LottieNativeBindings.nSetLottieBufferSize(nativePtr, buffer, width.toFloat(), height.toFloat())
-    }
-
-    fun getBuffer(frame: Int): Bitmap? {
-        buffer?.let {
-            LottieNativeBindings.nDrawLottieFrame(nativePtr, it, frame)
-        }
-        return buffer
-    }
-
-    private fun init(content: String): Long {
-        val outValues = IntArray(2)
-        val pointer = LottieNativeBindings.nCreateLottie(content, content.length, outValues)
-        frameCount = outValues[0]
-        duration = outValues[1] * 1000L
-        return pointer
     }
 }

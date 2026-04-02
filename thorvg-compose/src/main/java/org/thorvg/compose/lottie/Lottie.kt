@@ -44,7 +44,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
+import org.thorvg.core.lottie.LottieComposition
 import org.thorvg.core.lottie.LottieConstants
+import org.thorvg.core.lottie.LottieRenderState
 import org.thorvg.core.lottie.LottieRepeatMode
 
 /**

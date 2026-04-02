@@ -20,22 +20,19 @@
  * SOFTWARE.
  */
 
-package org.thorvg.compose.lottie
+package org.thorvg.core.lottie
 
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Bitmap.createBitmap
 import androidx.annotation.FloatRange
 import androidx.annotation.RawRes
-import org.thorvg.core.lottie.LottieConstants
-import org.thorvg.core.lottie.LottieNativeBindings
-import org.thorvg.core.lottie.LottieRepeatMode
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
 
 /**
- * Compose-facing ThorVG-backed composition that can render frames into a bitmap buffer.
+ * ThorVG-backed Lottie composition that can render frames into a bitmap buffer.
  */
 class LottieComposition private constructor(
     private val nativeLottie: NativeLottie
@@ -87,7 +84,7 @@ class LottieComposition private constructor(
         return LottieComposition(nativeLottie.copy())
     }
 
-    internal fun isValid(): Boolean {
+    fun isValid(): Boolean {
         return nativeLottie.nativePtr != 0L
     }
 
@@ -116,9 +113,9 @@ class LottieComposition private constructor(
 }
 
 /**
- * Shared mutable playback state used by the Compose adapter.
+ * Shared mutable playback state used by UI adapters.
  */
-open class LottieRenderState {
+class LottieRenderState {
     var composition: LottieComposition? = null
 
     var baseWidth = 0f
