@@ -14,7 +14,9 @@ if (${ANDROID_ABI} STREQUAL "arm64-v8a" OR ${ANDROID_ABI} STREQUAL "x86_64")
 
     add_library(lottie-libs SHARED
             lottie-libs.cpp
-            LottieData.cpp)
+            LottieData.cpp
+            svg-libs.cpp
+            SvgData.cpp)
 
     target_include_directories(lottie-libs PRIVATE
             ${THORVG_DIR}/inc)
