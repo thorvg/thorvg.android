@@ -42,9 +42,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.thorvg.sample.compose.ComposeSampleActivity
+import org.thorvg.sample.compose.LottieComposeSampleActivity
 import org.thorvg.sample.compose.SvgSampleActivity
-import org.thorvg.sample.view.ViewSampleActivity
+import org.thorvg.sample.view.LottieViewSampleActivity
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -54,13 +54,13 @@ class MainActivity : ComponentActivity() {
                 Surface(modifier = Modifier.fillMaxSize()) {
                     MainMenu(
                         onOpenCompose = {
-                            startActivity(Intent(this, ComposeSampleActivity::class.java))
+                            startActivity(Intent(this, LottieComposeSampleActivity::class.java))
                         },
                         onOpenSvg = {
                             startActivity(Intent(this, SvgSampleActivity::class.java))
                         },
                         onOpenView = {
-                            startActivity(Intent(this, ViewSampleActivity::class.java))
+                            startActivity(Intent(this, LottieViewSampleActivity::class.java))
                         }
                     )
                 }

@@ -54,7 +54,7 @@ import org.thorvg.compose.lottie.LottieState
 import org.thorvg.compose.lottie.rememberLottieState
 import org.thorvg.sample.R
 
-class ComposeSampleActivity : ComponentActivity() {
+class LottieComposeSampleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {

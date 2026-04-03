@@ -21,13 +21,15 @@
         android:orientation="vertical"
         android:padding="24dp">
 
-        <org.thorvg.view.LottieAnimationView
+        <org.thorvg.view.lottie.LottieView
             android:id="@+id/lottie_view"
             android:layout_width="220dp"
             android:layout_height="220dp"
             android:layout_marginBottom="20dp"
             android:background="@android:color/white"
-            app:lottieDrawable="@drawable/lottie_swinging" />
+            app:rawRes="@raw/swinging"
+            android:autoStart="true"
+            android:repeatCount="-1" />
 
         <LinearLayout
             android:layout_width="wrap_content"

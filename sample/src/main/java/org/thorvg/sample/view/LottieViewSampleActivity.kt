@@ -30,10 +30,10 @@ import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
-import org.thorvg.view.lottie.LottieAnimationView
+import org.thorvg.view.lottie.LottieView
 import org.thorvg.sample.R
 
-class ViewSampleActivity : AppCompatActivity() {
+class LottieViewSampleActivity : AppCompatActivity() {
     private val statusHandler = Handler(Looper.getMainLooper())
     private val statusRunnable = object : Runnable {
         override fun run() {
@@ -42,7 +42,7 @@ class ViewSampleActivity : AppCompatActivity() {
         }
     }
 
-    private lateinit var lottieView: LottieAnimationView
+    private lateinit var lottieView: LottieView
     private lateinit var stateButton: Button
     private lateinit var frameText: TextView
     private lateinit var speedText: TextView
