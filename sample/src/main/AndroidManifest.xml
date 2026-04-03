@@ -9,15 +9,6 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Thorvgandroid">
         <activity
-            android:name=".view.LottieViewSampleActivity"
-            android:exported="false" />
-        <activity
-            android:name=".compose.LottieComposeSampleActivity"
-            android:exported="false" />
-        <activity
-            android:name=".compose.SvgSampleActivity"
-            android:exported="false" />
-        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
@@ -25,6 +16,9 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".view.ViewSampleActivity"
+            android:exported="false" />
     </application>
 
 </manifest>

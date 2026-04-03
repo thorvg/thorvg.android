@@ -22,10 +22,14 @@
 
 package org.thorvg.sample
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
+import androidx.compose.animation.AnimatedContent
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
@@ -47,16 +51,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.thorvg.sample.view.LottieViewSampleActivity
+import org.thorvg.sample.view.ViewSampleActivity
 
 internal enum class MainScreen {
     Home,
     Compose
-}
-
-internal enum class SampleType {
-    Lottie,
-    Svg
 }
 
 class MainActivity : ComponentActivity() {
@@ -68,30 +67,91 @@ class MainActivity : ComponentActivity() {
                     var currentScreen by remember { mutableStateOf(MainScreen.Home) }
                     var sampleType by remember { mutableStateOf(SampleType.Lottie) }
 
-                    when (currentScreen) {
-                        MainScreen.Home -> {
-                            HomeScreen(
-                                onOpenCompose = {
-                                    sampleType = SampleType.Lottie
-                                    currentScreen = MainScreen.Compose
-                                },
-                                onOpenSvg = {
-                                    sampleType = SampleType.Svg
-                                    currentScreen = MainScreen.Compose
-                                },
-                                onOpenView = {
-                                    startActivity(Intent(this, LottieViewSampleActivity::class.java))
+                    AnimatedContent(
+                        targetState = currentScreen,
+                        label = "main_screen_transition",
+                        transitionSpec = {
+                            val duration = 280
+                            when {
+                                initialState == MainScreen.Home && targetState == MainScreen.Compose -> {
+                                    ContentTransform(
+                                        targetContentEnter = slideInHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            initialOffsetX = { fullWidth -> fullWidth }
+                                        ),
+                                        initialContentExit = slideOutHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            targetOffsetX = { fullWidth -> -fullWidth / 3 }
+                                        )
+                                    )
                                 }
-                            )
-                        }
 
-                        MainScreen.Compose -> {
-                            ComposeSampleScreen(
-                                sampleType = sampleType,
-                                onNavigateUp = {
-                                    currentScreen = MainScreen.Home
+                                initialState == MainScreen.Compose && targetState == MainScreen.Home -> {
+                                    ContentTransform(
+                                        targetContentEnter = slideInHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            initialOffsetX = { fullWidth -> -fullWidth / 3 }
+                                        ),
+                                        initialContentExit = slideOutHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            targetOffsetX = { fullWidth -> fullWidth }
+                                        )
+                                    )
                                 }
-                            )
+
+                                else -> {
+                                    ContentTransform(
+                                        targetContentEnter = slideInHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            initialOffsetX = { 0 }
+                                        ),
+                                        initialContentExit = slideOutHorizontally(
+                                            animationSpec = tween(durationMillis = duration),
+                                            targetOffsetX = { 0 }
+                                        )
+                                    )
+                                }
+                            }
+                        }
+                    ) { screen ->
+                        when (screen) {
+                            MainScreen.Home -> {
+                                HomeScreen(
+                                    onOpenCompose = {
+                                        sampleType = SampleType.Lottie
+                                        currentScreen = MainScreen.Compose
+                                    },
+                                    onOpenSvg = {
+                                        sampleType = SampleType.Svg
+                                        currentScreen = MainScreen.Compose
+                                    },
+                                    onOpenView = {
+                                        startActivity(
+                                            ViewSampleActivity.createIntent(
+                                                this@MainActivity,
+                                                SampleType.Lottie
+                                            )
+                                        )
+                                    },
+                                    onOpenSvgView = {
+                                        startActivity(
+                                            ViewSampleActivity.createIntent(
+                                                this@MainActivity,
+                                                SampleType.Svg
+                                            )
+                                        )
+                                    }
+                                )
+                            }
+
+                            MainScreen.Compose -> {
+                                ComposeSampleScreen(
+                                    sampleType = sampleType,
+                                    onNavigateUp = {
+                                        currentScreen = MainScreen.Home
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -104,7 +164,8 @@ class MainActivity : ComponentActivity() {
 private fun HomeScreen(
     onOpenCompose: () -> Unit,
     onOpenSvg: () -> Unit,
-    onOpenView: () -> Unit
+    onOpenView: () -> Unit,
+    onOpenSvgView: () -> Unit
 ) {
     SampleMenuLayout(
         title = stringResource(R.string.sample_menu_title),
@@ -121,6 +182,10 @@ private fun HomeScreen(
         MenuButton(
             text = stringResource(R.string.sample_open_view),
             onClick = onOpenView
+        )
+        MenuButton(
+            text = stringResource(R.string.sample_open_svg_view),
+            onClick = onOpenSvgView
         )
     }
 }
