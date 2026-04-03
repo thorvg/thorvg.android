@@ -129,18 +129,16 @@ class LottieView @JvmOverloads constructor(
     fun getFrameTo(): Int? = frameTo
 
     private fun updateLottieDrawable() {
-        if (isAttachedToWindow) {
-            val drawable = if (resId != Resources.ID_NULL) {
-                LottieDrawable.fromRawResource(context.resources, resId).also {
-                    applyConfig(it)
-                }
-            } else {
-                null
-            }
-            setThorVGDrawable(drawable)
-            if (drawable != null && autoStart) {
-                startAnimation()
-            }
+        if (!isAttachedToWindow) return
+
+        val drawable = if (resId != Resources.ID_NULL) {
+            LottieDrawable.fromRawResource(context.resources, resId).also(::applyConfig)
+        } else {
+            null
+        }
+        setThorVGDrawable(drawable)
+        if (drawable != null && autoStart) {
+            startAnimation()
         }
     }
 
@@ -219,7 +217,9 @@ class LottieView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        updateLottieDrawable()
+        if (lottieDrawable == null && resId != Resources.ID_NULL) {
+            updateLottieDrawable()
+        }
     }
 
     /**
