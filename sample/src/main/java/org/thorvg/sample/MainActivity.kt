@@ -29,6 +29,7 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -37,14 +38,26 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.thorvg.sample.compose.LottieComposeSampleActivity
-import org.thorvg.sample.compose.SvgSampleActivity
 import org.thorvg.sample.view.LottieViewSampleActivity
+
+internal enum class MainScreen {
+    Home,
+    Compose
+}
+
+internal enum class SampleType {
+    Lottie,
+    Svg
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -52,17 +65,35 @@ class MainActivity : ComponentActivity() {
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainMenu(
-                        onOpenCompose = {
-                            startActivity(Intent(this, LottieComposeSampleActivity::class.java))
-                        },
-                        onOpenSvg = {
-                            startActivity(Intent(this, SvgSampleActivity::class.java))
-                        },
-                        onOpenView = {
-                            startActivity(Intent(this, LottieViewSampleActivity::class.java))
+                    var currentScreen by remember { mutableStateOf(MainScreen.Home) }
+                    var sampleType by remember { mutableStateOf(SampleType.Lottie) }
+
+                    when (currentScreen) {
+                        MainScreen.Home -> {
+                            HomeScreen(
+                                onOpenCompose = {
+                                    sampleType = SampleType.Lottie
+                                    currentScreen = MainScreen.Compose
+                                },
+                                onOpenSvg = {
+                                    sampleType = SampleType.Svg
+                                    currentScreen = MainScreen.Compose
+                                },
+                                onOpenView = {
+                                    startActivity(Intent(this, LottieViewSampleActivity::class.java))
+                                }
+                            )
                         }
-                    )
+
+                        MainScreen.Compose -> {
+                            ComposeSampleScreen(
+                                sampleType = sampleType,
+                                onNavigateUp = {
+                                    currentScreen = MainScreen.Home
+                                }
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -70,10 +101,35 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainMenu(
+private fun HomeScreen(
     onOpenCompose: () -> Unit,
     onOpenSvg: () -> Unit,
     onOpenView: () -> Unit
+) {
+    SampleMenuLayout(
+        title = stringResource(R.string.sample_menu_title),
+        subtitle = stringResource(R.string.sample_menu_subtitle)
+    ) {
+        MenuButton(
+            text = stringResource(R.string.sample_open_compose),
+            onClick = onOpenCompose
+        )
+        MenuButton(
+            text = stringResource(R.string.sample_open_svg),
+            onClick = onOpenSvg
+        )
+        MenuButton(
+            text = stringResource(R.string.sample_open_view),
+            onClick = onOpenView
+        )
+    }
+}
+
+@Composable
+private fun SampleMenuLayout(
+    title: String,
+    subtitle: String,
+    content: @Composable ColumnScope.() -> Unit
 ) {
     Column(
         modifier = Modifier
@@ -84,34 +140,27 @@ private fun MainMenu(
         verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically)
     ) {
         Text(
-            text = stringResource(R.string.sample_menu_title),
+            text = title,
             style = MaterialTheme.typography.headlineMedium
         )
         Text(
-            text = stringResource(R.string.sample_menu_subtitle),
+            text = subtitle,
             style = MaterialTheme.typography.bodyLarge,
             color = Color(0xFF5B5247)
         )
+        content()
+    }
+}
 
-        Button(
-            onClick = onOpenCompose,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sample_open_compose))
-        }
-
-        Button(
-            onClick = onOpenSvg,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sample_open_svg))
-        }
-
-        Button(
-            onClick = onOpenView,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sample_open_view))
-        }
+@Composable
+private fun MenuButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(text)
     }
 }
