@@ -29,6 +29,7 @@ import androidx.annotation.RawRes
 import java.io.BufferedReader
 import java.io.IOException
 import java.io.InputStreamReader
+import java.nio.charset.StandardCharsets
 
 /**
  * ThorVG-backed SVG composition that can render into a bitmap buffer.
@@ -100,8 +101,8 @@ class SvgComposition private constructor(
         private fun loadSvgFile(resources: Resources, @RawRes resId: Int): String {
             return try {
                 resources.openRawResource(resId).use { inputStream ->
-                    BufferedReader(InputStreamReader(inputStream)).use { reader ->
-                        reader.lineSequence().joinToString("")
+                    BufferedReader(InputStreamReader(inputStream, StandardCharsets.UTF_8)).use { reader ->
+                        reader.readText()
                     }
                 }
             } catch (e: IOException) {
