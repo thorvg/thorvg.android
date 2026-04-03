@@ -20,49 +20,43 @@
  * SOFTWARE.
  */
 
-package org.thorvg.sample
+package org.thorvg.sample.compose
 
-import android.content.Intent
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.thorvg.sample.compose.ComposeSampleActivity
-import org.thorvg.sample.compose.SvgSampleActivity
-import org.thorvg.sample.view.ViewSampleActivity
+import org.thorvg.compose.svg.Svg
+import org.thorvg.sample.R
 
-class MainActivity : ComponentActivity() {
+class SvgSampleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContent {
             MaterialTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    MainMenu(
-                        onOpenCompose = {
-                            startActivity(Intent(this, ComposeSampleActivity::class.java))
-                        },
-                        onOpenSvg = {
-                            startActivity(Intent(this, SvgSampleActivity::class.java))
-                        },
-                        onOpenView = {
-                            startActivity(Intent(this, ViewSampleActivity::class.java))
-                        }
-                    )
+                    SvgSampleScreen(onNavigateUp = ::finish)
                 }
             }
         }
@@ -70,48 +64,52 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun MainMenu(
-    onOpenCompose: () -> Unit,
-    onOpenSvg: () -> Unit,
-    onOpenView: () -> Unit
-) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF3EFE7))
-            .padding(24.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.spacedBy(18.dp, Alignment.CenterVertically)
-    ) {
-        Text(
-            text = stringResource(R.string.sample_menu_title),
-            style = MaterialTheme.typography.headlineMedium
-        )
-        Text(
-            text = stringResource(R.string.sample_menu_subtitle),
-            style = MaterialTheme.typography.bodyLarge,
-            color = Color(0xFF5B5247)
-        )
-
-        Button(
-            onClick = onOpenCompose,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sample_open_compose))
+@OptIn(ExperimentalMaterial3Api::class)
+private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
+    Scaffold(
+        containerColor = Color(0xFFF6F0E8),
+        contentWindowInsets = WindowInsets(0),
+        topBar = {
+            TopAppBar(
+                title = { Text(stringResource(R.string.sample_svg_title)) },
+                navigationIcon = {
+                    TextButton(onClick = onNavigateUp) {
+                        Text(stringResource(R.string.sample_navigate_up))
+                    }
+                }
+            )
         }
-
-        Button(
-            onClick = onOpenSvg,
-            modifier = Modifier.fillMaxWidth()
+    ) { innerPadding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF6F0E8))
+                .padding(innerPadding)
+                .padding(24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            Text(stringResource(R.string.sample_open_svg))
-        }
-
-        Button(
-            onClick = onOpenView,
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Text(stringResource(R.string.sample_open_view))
+            Text(
+                text = "Svg(resId = R.raw.tiger)",
+                style = MaterialTheme.typography.titleMedium
+            )
+            Text(
+                text = "ThorVG Compose Svg() example using tiger.svg",
+                style = MaterialTheme.typography.bodyMedium,
+                color = Color(0xFF5B5247)
+            )
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .aspectRatio(1f)
+                    .background(Color.White),
+                contentAlignment = Alignment.Center
+            ) {
+                Svg(
+                    resId = R.raw.tiger,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
         }
     }
 }
