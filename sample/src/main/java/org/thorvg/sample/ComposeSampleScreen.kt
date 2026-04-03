@@ -1,5 +1,6 @@
 package org.thorvg.sample
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -25,6 +26,8 @@ internal fun ComposeSampleScreen(
     sampleType: SampleType,
     onNavigateUp: () -> Unit
 ) {
+    BackHandler(onBack = onNavigateUp)
+
     val titleRes = when (sampleType) {
         SampleType.Lottie -> R.string.sample_compose_title
         SampleType.Svg -> R.string.sample_svg_title
