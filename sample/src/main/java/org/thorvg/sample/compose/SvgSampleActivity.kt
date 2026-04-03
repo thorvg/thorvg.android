@@ -63,9 +63,22 @@ class SvgSampleActivity : ComponentActivity() {
     }
 }
 
+private const val USE_ASSET_SAMPLE = true
+
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
+    val svgSourceLabel = if (USE_ASSET_SAMPLE) {
+        "Svg(assetName = \"thorvg_mono_black.svg\")"
+    } else {
+        "Svg(resId = R.raw.tiger)"
+    }
+    val svgSourceDescription = if (USE_ASSET_SAMPLE) {
+        "ThorVG Compose Svg() example using assets/thorvg_mono_black.svg"
+    } else {
+        "ThorVG Compose Svg() example using raw/tiger.svg"
+    }
+
     Scaffold(
         containerColor = Color(0xFFF6F0E8),
         contentWindowInsets = WindowInsets(0),
@@ -90,11 +103,11 @@ private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             Text(
-                text = "Svg(resId = R.raw.tiger)",
+                text = svgSourceLabel,
                 style = MaterialTheme.typography.titleMedium
             )
             Text(
-                text = "ThorVG Compose Svg() example using tiger.svg",
+                text = svgSourceDescription,
                 style = MaterialTheme.typography.bodyMedium,
                 color = Color(0xFF5B5247)
             )
@@ -105,10 +118,17 @@ private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                Svg(
-                    resId = R.raw.tiger,
-                    modifier = Modifier.fillMaxSize()
-                )
+                if (USE_ASSET_SAMPLE) {
+                    Svg(
+                        assetName = "thorvg_mono_black.svg",
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Svg(
+                        resId = R.raw.tiger,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

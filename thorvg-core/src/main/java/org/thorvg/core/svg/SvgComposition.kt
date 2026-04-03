@@ -22,6 +22,7 @@
 
 package org.thorvg.core.svg
 
+import android.content.res.AssetManager
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Bitmap.createBitmap
@@ -94,13 +95,21 @@ class SvgComposition private constructor(
          */
         @JvmStatic
         fun fromRawResource(resources: Resources, @RawRes resId: Int): SvgComposition {
-            return SvgComposition(loadSvgFile(resources, resId))
+            return SvgComposition(loadSvgFile { loadRawResource(resources, resId) })
+        }
+
+        /**
+         * Creates a composition from an asset file that contains SVG XML.
+         */
+        @JvmStatic
+        fun fromAsset(assetManager: AssetManager, assetName: String): SvgComposition {
+            return SvgComposition(loadSvgFile { loadAsset(assetManager, assetName) })
         }
 
         @Throws(IOException::class)
-        private fun loadSvgFile(resources: Resources, @RawRes resId: Int): String {
+        private fun loadSvgFile(openInputStream: () -> java.io.InputStream): String {
             return try {
-                resources.openRawResource(resId).use { inputStream ->
+                openInputStream().use { inputStream ->
                     BufferedReader(InputStreamReader(inputStream, StandardCharsets.UTF_8)).use { reader ->
                         reader.readText()
                     }
@@ -109,6 +118,12 @@ class SvgComposition private constructor(
                 throw IOException("Failed to read an svg file.")
             }
         }
+
+        private fun loadRawResource(resources: Resources, @RawRes resId: Int) =
+            resources.openRawResource(resId)
+
+        private fun loadAsset(assetManager: AssetManager, assetName: String) =
+            assetManager.open(assetName)
     }
 }
 

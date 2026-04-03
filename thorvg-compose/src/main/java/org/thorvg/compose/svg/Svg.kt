@@ -60,6 +60,25 @@ fun rememberSvgComposition(@RawRes resId: Int): SvgComposition {
 }
 
 /**
+ * Remembers a [SvgComposition] loaded from an asset file and releases it when it leaves composition.
+ */
+@Composable
+fun rememberSvgComposition(assetName: String): SvgComposition {
+    val assetManager = LocalContext.current.assets
+    val composition = remember(assetManager, assetName) {
+        SvgComposition.fromAsset(assetManager, assetName)
+    }
+
+    DisposableEffect(composition) {
+        onDispose {
+            composition.release()
+        }
+    }
+
+    return composition
+}
+
+/**
  * Renders a ThorVG SVG from a raw resource in Compose.
  */
 @Composable
@@ -68,6 +87,21 @@ fun Svg(
     modifier: Modifier = Modifier
 ) {
     val composition = rememberSvgComposition(resId)
+    Svg(
+        composition = composition,
+        modifier = modifier
+    )
+}
+
+/**
+ * Renders a ThorVG SVG from an asset file in Compose.
+ */
+@Composable
+fun Svg(
+    assetName: String,
+    modifier: Modifier = Modifier
+) {
+    val composition = rememberSvgComposition(assetName)
     Svg(
         composition = composition,
         modifier = modifier
@@ -84,22 +118,44 @@ fun Svg(
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var currentBitmap by remember(composition) { mutableStateOf<Bitmap?>(null) }
+    var renderedSize by remember(composition) { mutableStateOf(IntSize.Zero) }
 
     LaunchedEffect(composition, canvasSize) {
         if (canvasSize.width <= 0 || canvasSize.height <= 0) {
             currentBitmap = null
+            renderedSize = IntSize.Zero
             return@LaunchedEffect
         }
 
-        composition.setSize(canvasSize.width, canvasSize.height)
+        val intrinsicWidth = composition.width
+        val intrinsicHeight = composition.height
+        val targetSize = if (intrinsicWidth > 0 && intrinsicHeight > 0) {
+            val scale = minOf(
+                canvasSize.width.toFloat() / intrinsicWidth,
+                canvasSize.height.toFloat() / intrinsicHeight
+            )
+            IntSize(
+                width = (intrinsicWidth * scale).toInt().coerceAtLeast(1),
+                height = (intrinsicHeight * scale).toInt().coerceAtLeast(1)
+            )
+        } else {
+            canvasSize
+        }
+
+        composition.setSize(targetSize.width, targetSize.height)
         currentBitmap = composition.render()
+        renderedSize = targetSize
     }
 
     Canvas(
         modifier = modifier.onSizeChanged { canvasSize = it }
     ) {
         currentBitmap?.let { bitmap ->
-            drawImage(bitmap.asImageBitmap(), topLeft = Offset.Zero)
+            val topLeft = Offset(
+                x = ((size.width - renderedSize.width) / 2f).coerceAtLeast(0f),
+                y = ((size.height - renderedSize.height) / 2f).coerceAtLeast(0f)
+            )
+            drawImage(bitmap.asImageBitmap(), topLeft = topLeft)
         }
     }
 }
