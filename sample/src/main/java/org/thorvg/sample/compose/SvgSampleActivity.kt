@@ -22,6 +22,7 @@
 
 package org.thorvg.sample.compose
 
+import android.net.Uri
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -42,6 +43,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,6 +51,14 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.thorvg.compose.svg.Svg
 import org.thorvg.sample.R
+
+private enum class SvgSampleType {
+    RAW,
+    ASSET,
+    URI
+}
+
+private val SVG_SAMPLE_TYPE = SvgSampleType.ASSET
 
 class SvgSampleActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -63,20 +73,46 @@ class SvgSampleActivity : ComponentActivity() {
     }
 }
 
-private const val USE_ASSET_SAMPLE = true
-
 @Composable
 @OptIn(ExperimentalMaterial3Api::class)
 private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
-    val svgSourceLabel = if (USE_ASSET_SAMPLE) {
-        "Svg(assetName = \"thorvg_mono_black.svg\")"
-    } else {
-        "Svg(resId = R.raw.tiger)"
+    val context = LocalContext.current
+    val resourceUri = Uri.parse("android.resource://${context.packageName}/${R.raw.tiger}")
+    val svgSourceLabel = when (SVG_SAMPLE_TYPE) {
+        SvgSampleType.URI -> "Svg(uri = android.resource://.../raw/tiger)"
+        SvgSampleType.ASSET -> "Svg(assetName = \"thorvg_mono_black.svg\")"
+        SvgSampleType.RAW -> "Svg(resId = R.raw.tiger)"
     }
-    val svgSourceDescription = if (USE_ASSET_SAMPLE) {
-        "ThorVG Compose Svg() example using assets/thorvg_mono_black.svg"
-    } else {
-        "ThorVG Compose Svg() example using raw/tiger.svg"
+    val svgSourceDescription = when (SVG_SAMPLE_TYPE) {
+        SvgSampleType.URI -> "ThorVG Compose Svg() example using android.resource Uri"
+        SvgSampleType.ASSET -> "ThorVG Compose Svg() example using assets/thorvg_mono_black.svg"
+        SvgSampleType.RAW -> "ThorVG Compose Svg() example using raw/tiger.svg"
+    }
+    val svgContent: @Composable () -> Unit = when (SVG_SAMPLE_TYPE) {
+        SvgSampleType.URI -> {
+            {
+                Svg(
+                    uri = resourceUri,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+        SvgSampleType.ASSET -> {
+            {
+                Svg(
+                    assetName = "thorvg_mono_black.svg",
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
+        SvgSampleType.RAW -> {
+            {
+                Svg(
+                    resId = R.raw.tiger,
+                    modifier = Modifier.fillMaxSize()
+                )
+            }
+        }
     }
 
     Scaffold(
@@ -118,17 +154,7 @@ private fun SvgSampleScreen(onNavigateUp: () -> Unit) {
                     .background(Color.White),
                 contentAlignment = Alignment.Center
             ) {
-                if (USE_ASSET_SAMPLE) {
-                    Svg(
-                        assetName = "thorvg_mono_black.svg",
-                        modifier = Modifier.fillMaxSize()
-                    )
-                } else {
-                    Svg(
-                        resId = R.raw.tiger,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
+                svgContent()
             }
         }
     }

@@ -22,10 +22,12 @@
 
 package org.thorvg.core.svg
 
+import android.content.Context
 import android.content.res.AssetManager
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Bitmap.createBitmap
+import android.net.Uri
 import androidx.annotation.RawRes
 import java.io.BufferedReader
 import java.io.IOException
@@ -104,6 +106,17 @@ class SvgComposition private constructor(
         @JvmStatic
         fun fromAsset(assetManager: AssetManager, assetName: String): SvgComposition {
             return SvgComposition(loadSvgFile { loadAsset(assetManager, assetName) })
+        }
+
+        /**
+         * Creates a composition from a [Uri] that resolves to SVG XML content.
+         */
+        @JvmStatic
+        fun fromUri(context: Context, uri: Uri): SvgComposition {
+            return SvgComposition(loadSvgFile {
+                context.contentResolver.openInputStream(uri)
+                    ?: throw IOException("Failed to open svg uri: $uri")
+            })
         }
 
         @Throws(IOException::class)
