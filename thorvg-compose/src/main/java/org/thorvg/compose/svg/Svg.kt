@@ -23,6 +23,7 @@
 package org.thorvg.compose.svg
 
 import android.graphics.Bitmap
+import android.net.Uri
 import androidx.annotation.RawRes
 import androidx.compose.foundation.Canvas
 import androidx.compose.runtime.Composable
@@ -79,6 +80,25 @@ fun rememberSvgComposition(assetName: String): SvgComposition {
 }
 
 /**
+ * Remembers a [SvgComposition] loaded from a [Uri] and releases it when it leaves composition.
+ */
+@Composable
+fun rememberSvgComposition(uri: Uri): SvgComposition {
+    val context = LocalContext.current
+    val composition = remember(context, uri) {
+        SvgComposition.fromUri(context, uri)
+    }
+
+    DisposableEffect(composition) {
+        onDispose {
+            composition.release()
+        }
+    }
+
+    return composition
+}
+
+/**
  * Renders a ThorVG SVG from a raw resource in Compose.
  */
 @Composable
@@ -102,6 +122,21 @@ fun Svg(
     modifier: Modifier = Modifier
 ) {
     val composition = rememberSvgComposition(assetName)
+    Svg(
+        composition = composition,
+        modifier = modifier
+    )
+}
+
+/**
+ * Renders a ThorVG SVG from a [Uri] in Compose.
+ */
+@Composable
+fun Svg(
+    uri: Uri,
+    modifier: Modifier = Modifier
+) {
+    val composition = rememberSvgComposition(uri)
     Svg(
         composition = composition,
         modifier = modifier
