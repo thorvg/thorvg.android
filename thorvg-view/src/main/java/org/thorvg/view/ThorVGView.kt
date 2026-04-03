@@ -9,7 +9,7 @@ import android.view.View
 /**
  * Common View host for ThorVG-backed drawables.
  */
-open class ThorVGView @JvmOverloads constructor(
+abstract class ThorVGView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
@@ -17,7 +17,7 @@ open class ThorVGView @JvmOverloads constructor(
 ) : View(context, attrs, defStyleAttr, defStyleRes) {
     private var thorvgDrawable: ThorVGDrawable? = null
 
-    fun setThorVGDrawable(drawable: ThorVGDrawable?) {
+    protected fun setThorVGDrawable(drawable: ThorVGDrawable?) {
         if (thorvgDrawable === drawable) return
 
         clearDrawableCallback()
@@ -30,9 +30,9 @@ open class ThorVGView @JvmOverloads constructor(
         invalidate()
     }
 
-    fun getThorVGDrawable(): ThorVGDrawable? = thorvgDrawable
+    protected fun getThorVGDrawable(): ThorVGDrawable? = thorvgDrawable
 
-    fun clearThorVGDrawable() {
+    protected fun clearThorVGDrawable() {
         clearDrawableCallback()
         thorvgDrawable?.release()
         thorvgDrawable = null
