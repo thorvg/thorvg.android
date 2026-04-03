@@ -34,24 +34,46 @@ class SvgView @JvmOverloads constructor(
     }
 
     fun setSvgRawResource(@RawRes resId: Int) {
+        if (rawResId == resId && assetName == null && uri == null) return
+
         rawResId = resId
         assetName = null
         uri = null
         updateSvgDrawable()
     }
 
+    @RawRes
+    fun getSvgRawResource(): Int = rawResId
+
     fun setSvgAsset(assetName: String) {
+        if (this.assetName == assetName && rawResId == Resources.ID_NULL && uri == null) return
+
         this.assetName = assetName
         rawResId = Resources.ID_NULL
         uri = null
         updateSvgDrawable()
     }
 
+    fun getSvgAsset(): String? = assetName
+
     fun setSvgUri(uri: Uri) {
+        if (this.uri == uri && rawResId == Resources.ID_NULL && assetName == null) return
+
         rawResId = Resources.ID_NULL
         assetName = null
         this.uri = uri
         updateSvgDrawable()
+    }
+
+    fun getSvgUri(): Uri? = uri
+
+    fun clearSource() {
+        if (rawResId == Resources.ID_NULL && assetName == null && uri == null) return
+
+        rawResId = Resources.ID_NULL
+        assetName = null
+        uri = null
+        clearThorVGDrawable()
     }
 
     private fun updateSvgDrawable() {
