@@ -55,12 +55,18 @@ class LottieView @JvmOverloads constructor(
     /**
      * Replaces the currently bound drawable resource.
      */
-    fun setLottieDrawableResource(@RawRes resId: Int) {
+    fun setRawRes(@RawRes resId: Int) {
         if (this.resId != resId) {
             this.resId = resId
             updateLottieDrawable()
         }
     }
+
+    /**
+     * Returns the configured raw resource id.
+     */
+    @RawRes
+    fun getRawRes(): Int = resId
 
     /**
      * Updates how many times playback repeats after its first pass.

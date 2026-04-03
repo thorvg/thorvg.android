@@ -33,7 +33,7 @@ class SvgView @JvmOverloads constructor(
         attributes.recycle()
     }
 
-    fun setSvgRawResource(@RawRes resId: Int) {
+    fun setRawRes(@RawRes resId: Int) {
         if (rawResId == resId && assetName == null && uri == null) return
 
         rawResId = resId
@@ -43,9 +43,9 @@ class SvgView @JvmOverloads constructor(
     }
 
     @RawRes
-    fun getSvgRawResource(): Int = rawResId
+    fun getRawRes(): Int = rawResId
 
-    fun setSvgAsset(assetName: String) {
+    fun setAssetName(assetName: String) {
         if (this.assetName == assetName && rawResId == Resources.ID_NULL && uri == null) return
 
         this.assetName = assetName
@@ -54,9 +54,9 @@ class SvgView @JvmOverloads constructor(
         updateSvgDrawable()
     }
 
-    fun getSvgAsset(): String? = assetName
+    fun getAssetName(): String? = assetName
 
-    fun setSvgUri(uri: Uri) {
+    fun setUri(uri: Uri) {
         if (this.uri == uri && rawResId == Resources.ID_NULL && assetName == null) return
 
         rawResId = Resources.ID_NULL
@@ -65,7 +65,7 @@ class SvgView @JvmOverloads constructor(
         updateSvgDrawable()
     }
 
-    fun getSvgUri(): Uri? = uri
+    fun getUri(): Uri? = uri
 
     fun clearSource() {
         if (rawResId == Resources.ID_NULL && assetName == null && uri == null) return

@@ -146,9 +146,9 @@ SVG in XML:
 Or configure a `SvgView` programmatically:
 
 ```kotlin
-svgView.setSvgRawResource(R.raw.tiger)
-svgView.setSvgAsset("thorvg_mono_black.svg")
-svgView.setSvgUri(svgUri)
+svgView.setRawRes(R.raw.tiger)
+svgView.setAssetName("thorvg_mono_black.svg")
+svgView.setUri(svgUri)
 ```
 
 ## Sample App
