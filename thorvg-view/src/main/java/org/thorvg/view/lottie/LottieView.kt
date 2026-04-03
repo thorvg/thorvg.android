@@ -2,10 +2,9 @@ package org.thorvg.view.lottie
 
 import android.content.Context
 import android.content.res.Resources
-import android.os.Parcelable
 import android.util.AttributeSet
-import androidx.annotation.RawRes
 import androidx.annotation.FloatRange
+import androidx.annotation.RawRes
 import org.thorvg.core.lottie.LottieConstants
 import org.thorvg.view.R
 import org.thorvg.view.ThorVGView
@@ -63,16 +62,77 @@ class LottieView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Updates how many times playback repeats after its first pass.
+     */
+    fun setRepeatCount(repeatCount: Int) {
+        this.repeatCount = repeatCount
+        lottieDrawable?.repeatCount = repeatCount
+    }
+
+    /**
+     * Returns the configured repeat count.
+     */
+    fun getRepeatCount(): Int = repeatCount
+
+    /**
+     * Updates the repeat mode.
+     */
+    fun setRepeatMode(repeatMode: Int) {
+        this.repeatMode = repeatMode
+        lottieDrawable?.setRepeatMode(repeatMode)
+    }
+
+    /**
+     * Returns the configured repeat mode.
+     */
+    fun getRepeatMode(): Int = repeatMode
+
+    /**
+     * Controls whether playback starts automatically after attach.
+     */
+    fun setAutoStart(autoStart: Boolean) {
+        this.autoStart = autoStart
+    }
+
+    /**
+     * Returns whether playback is configured to auto-start after attach.
+     */
+    fun getAutoStart(): Boolean = autoStart
+
+    /**
+     * Updates the first frame used for playback.
+     */
+    fun setFrameFrom(frameFrom: Int) {
+        this.frameFrom = frameFrom
+        lottieDrawable?.setFirstFrame(frameFrom)
+    }
+
+    /**
+     * Returns the configured first frame.
+     */
+    fun getFrameFrom(): Int = frameFrom
+
+    /**
+     * Updates the last frame used for playback.
+     */
+    fun setFrameTo(frameTo: Int?) {
+        this.frameTo = frameTo
+        if (frameTo != null) {
+            lottieDrawable?.setLastFrame(frameTo)
+        }
+    }
+
+    /**
+     * Returns the configured last frame when one was explicitly set.
+     */
+    fun getFrameTo(): Int? = frameTo
+
     private fun updateLottieDrawable() {
         if (isAttachedToWindow) {
             val drawable = if (resId != Resources.ID_NULL) {
                 LottieDrawable.fromRawResource(context.resources, resId).also {
-                    it.setAnimationListener(listener)
-                    it.repeatCount = repeatCount
-                    it.setRepeatMode(repeatMode)
-                    it.speed = speed
-                    it.setFirstFrame(frameFrom)
-                    frameTo?.let(it::setLastFrame)
+                    applyConfig(it)
                 }
             } else {
                 null
@@ -82,6 +142,15 @@ class LottieView @JvmOverloads constructor(
                 startAnimation()
             }
         }
+    }
+
+    private fun applyConfig(drawable: LottieDrawable) {
+        drawable.setAnimationListener(listener)
+        drawable.repeatCount = repeatCount
+        drawable.setRepeatMode(repeatMode)
+        drawable.speed = speed
+        drawable.setFirstFrame(frameFrom)
+        frameTo?.let(drawable::setLastFrame)
     }
 
     /**
@@ -153,23 +222,11 @@ class LottieView @JvmOverloads constructor(
         updateLottieDrawable()
     }
 
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
-    }
-
     /**
      * Registers a listener for playback lifecycle callbacks.
      */
     fun setAnimationListener(listener: LottieListener?) {
         this.listener = listener
         lottieDrawable?.setAnimationListener(listener)
-    }
-
-    override fun onSaveInstanceState(): Parcelable? {
-        return super.onSaveInstanceState()
-    }
-
-    override fun onRestoreInstanceState(state: Parcelable?) {
-        super.onRestoreInstanceState(state)
     }
 }
