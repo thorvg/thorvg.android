@@ -68,10 +68,8 @@ class SvgView @JvmOverloads constructor(
 
     override fun onAttachedToWindow() {
         super.onAttachedToWindow()
-        updateSvgDrawable()
-    }
-
-    override fun onDetachedFromWindow() {
-        super.onDetachedFromWindow()
+        if (getThorVGDrawable() == null) {
+            updateSvgDrawable()
+        }
     }
 }

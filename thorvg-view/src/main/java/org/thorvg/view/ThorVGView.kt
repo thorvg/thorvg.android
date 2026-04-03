@@ -20,14 +20,11 @@ open class ThorVGView @JvmOverloads constructor(
     fun setThorVGDrawable(drawable: ThorVGDrawable?) {
         if (thorvgDrawable === drawable) return
 
-        thorvgDrawable?.callback = null
-        thorvgDrawable?.release()
+        clearDrawableCallback()
+        releaseDrawableIfNeeded(drawable)
 
         thorvgDrawable = drawable?.also {
-            it.callback = this
-            if (measuredWidth > 0 && measuredHeight > 0) {
-                it.setSize(measuredWidth, measuredHeight)
-            }
+            bindDrawable(it)
         }
 
         invalidate()
@@ -35,16 +32,26 @@ open class ThorVGView @JvmOverloads constructor(
 
     fun getThorVGDrawable(): ThorVGDrawable? = thorvgDrawable
 
+    fun clearThorVGDrawable() {
+        clearDrawableCallback()
+        thorvgDrawable?.release()
+        thorvgDrawable = null
+        invalidate()
+    }
+
     override fun onMeasure(widthMeasureSpec: Int, heightMeasureSpec: Int) {
         super.onMeasure(widthMeasureSpec, heightMeasureSpec)
         thorvgDrawable?.setSize(measuredWidth, measuredHeight)
     }
 
+    override fun onAttachedToWindow() {
+        super.onAttachedToWindow()
+        thorvgDrawable?.let(::bindDrawable)
+    }
+
     override fun onDetachedFromWindow() {
         super.onDetachedFromWindow()
-        thorvgDrawable?.callback = null
-        thorvgDrawable?.release()
-        thorvgDrawable = null
+        clearDrawableCallback()
     }
 
     override fun draw(canvas: Canvas) {
@@ -55,5 +62,22 @@ open class ThorVGView @JvmOverloads constructor(
     override fun invalidateDrawable(drawable: Drawable) {
         super.invalidateDrawable(drawable)
         invalidate()
+    }
+
+    private fun bindDrawable(drawable: ThorVGDrawable) {
+        drawable.callback = this
+        if (measuredWidth > 0 && measuredHeight > 0) {
+            drawable.setSize(measuredWidth, measuredHeight)
+        }
+    }
+
+    private fun clearDrawableCallback() {
+        thorvgDrawable?.callback = null
+    }
+
+    private fun releaseDrawableIfNeeded(nextDrawable: ThorVGDrawable?) {
+        if (thorvgDrawable != null && thorvgDrawable !== nextDrawable) {
+            thorvgDrawable?.release()
+        }
     }
 }
