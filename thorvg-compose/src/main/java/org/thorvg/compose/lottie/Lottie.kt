@@ -209,7 +209,6 @@ fun Lottie(
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
     var currentBitmap by remember(composition) { mutableStateOf<Bitmap?>(null) }
-    var currentFrame by remember(composition) { mutableIntStateOf(firstFrame) }
     var consumedResetRequest by remember(composition) { mutableIntStateOf(state.resetRequests) }
 
     LaunchedEffect(
@@ -257,7 +256,6 @@ fun Lottie(
 
         while (isActive) {
             currentBitmap = renderState.renderFrame(frame)
-            currentFrame = frame
             state.currentFrame = frame
 
             if (!state.isPlaying) {
