@@ -3,8 +3,10 @@
     <string name="sample_menu_title">ThorVG Samples</string>
     <string name="sample_menu_subtitle">Choose a rendering adapter</string>
     <string name="sample_open_compose">Open Compose Sample</string>
+    <string name="sample_open_svg">Open SVG Sample</string>
     <string name="sample_open_view">Open View Sample</string>
     <string name="sample_compose_title">ThorVG Compose</string>
+    <string name="sample_svg_title">ThorVG SVG</string>
     <string name="sample_view_title">ThorVG View</string>
     <string name="sample_pause">Pause</string>
     <string name="sample_resume">Resume</string>

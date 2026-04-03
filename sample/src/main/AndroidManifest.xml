@@ -15,6 +15,9 @@
             android:name=".compose.ComposeSampleActivity"
             android:exported="false" />
         <activity
+            android:name=".compose.SvgSampleActivity"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
