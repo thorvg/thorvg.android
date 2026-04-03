@@ -9,10 +9,10 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Thorvgandroid">
         <activity
-            android:name=".view.ViewSampleActivity"
+            android:name=".view.LottieViewSampleActivity"
             android:exported="false" />
         <activity
-            android:name=".compose.ComposeSampleActivity"
+            android:name=".compose.LottieComposeSampleActivity"
             android:exported="false" />
         <activity
             android:name=".compose.SvgSampleActivity"

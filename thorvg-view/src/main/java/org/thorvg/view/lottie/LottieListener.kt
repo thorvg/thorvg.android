@@ -3,7 +3,7 @@ package org.thorvg.view.lottie
 /**
  * Receives lifecycle callbacks from a ThorVG Lottie playback session.
  */
-interface LottieAnimationListener {
+interface LottieListener {
     /**
      * Called when playback starts drawing the first frame.
      */

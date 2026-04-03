@@ -22,7 +22,6 @@
 
 package org.thorvg.view.lottie
 
-import android.annotation.SuppressLint
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -33,28 +32,20 @@ import android.graphics.drawable.Animatable
 import android.graphics.drawable.Drawable
 import android.os.Handler
 import android.os.Looper
-import android.util.AttributeSet
-import android.util.Log
-import android.util.Xml
-import androidx.annotation.DrawableRes
+import androidx.annotation.RawRes
 import androidx.annotation.FloatRange
 import org.thorvg.core.lottie.LottieComposition
 import org.thorvg.core.lottie.LottieConstants
 import org.thorvg.core.lottie.LottieRenderState
 import org.thorvg.core.lottie.LottieRepeatMode
-import org.thorvg.view.R
-import org.xmlpull.v1.XmlPullParser
-import org.xmlpull.v1.XmlPullParserException
-import java.io.IOException
+import org.thorvg.view.ThorVGDrawable
 
 /**
  * Drawable adapter that renders a ThorVG Lottie composition into an Android [Canvas].
- *
- * Instances are usually created from a drawable XML resource via [create].
  */
-class LottieDrawable internal constructor() : Drawable(), Animatable {
+class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
     private var lottieState: LottieDrawableState = LottieDrawableState()
-    private var listener: LottieAnimationListener? = null
+    private var listener: LottieListener? = null
 
     private var isRunning = false
     private var isEnded = false
@@ -77,7 +68,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
      *
      * Call this when the drawable is no longer needed.
      */
-    fun release() {
+    override fun release() {
         lottieState.releaseComposition()
     }
 
@@ -237,7 +228,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     /**
      * Resizes the composition buffer to the given dimensions in pixels.
      */
-    fun setSize(width: Int, height: Int) {
+    override fun setSize(width: Int, height: Int) {
         require(width > 0) { "LottieDrawable requires width > 0" }
         require(height > 0) { "LottieDrawable requires height > 0" }
         lottieState.setCompositionSize(width, height)
@@ -292,7 +283,7 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     /**
      * Registers a listener for playback lifecycle callbacks.
      */
-    fun setAnimationListener(listener: LottieAnimationListener?) {
+    fun setAnimationListener(listener: LottieListener?) {
         this.listener = listener
     }
 
@@ -306,42 +297,6 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
 
     internal fun dispatchAnimationEnd() {
         listener?.onAnimationEnd()
-    }
-
-    override fun inflate(
-        resources: Resources,
-        parser: XmlPullParser,
-        attrs: AttributeSet
-    ) {
-        val state = lottieState
-        val attributes = resources.obtainAttributes(attrs, R.styleable.LottieDrawable)
-
-        val rawRes = attributes.getResourceId(R.styleable.LottieDrawable_rawRes, 0)
-        require(rawRes != 0) { "" }
-
-        state.composition = LottieComposition.fromRawResource(resources, rawRes)
-        state.composition?.let { composition ->
-            setLastFrame(attributes.getInt(R.styleable.LottieDrawable_frameTo, composition.frameCount))
-        }
-        setFirstFrame(attributes.getInt(R.styleable.LottieDrawable_frameFrom, 0))
-        speed = attributes.getFloat(R.styleable.LottieDrawable_speed, 1f)
-        setRepeatMode(attributes.getInt(R.styleable.LottieDrawable_android_repeatMode, RESTART))
-        repeatCount = attributes.getInt(R.styleable.LottieDrawable_android_repeatCount, 0)
-        state.autoPlay = attributes.getBoolean(R.styleable.LottieDrawable_android_autoStart, true)
-
-        val defaultSize = (resources.displayMetrics.density * UNDEFINED_SIZE_IN_DIP).toInt()
-        state.baseWidth = attributes.getDimensionPixelOffset(
-            R.styleable.LottieDrawable_android_width,
-            defaultSize
-        ).toFloat()
-        state.baseHeight = attributes.getDimensionPixelOffset(
-            R.styleable.LottieDrawable_android_height,
-            defaultSize
-        ).toFloat()
-
-        attributes.recycle()
-
-        state.setCompositionSize(state.baseWidth.toInt(), state.baseHeight.toInt())
     }
 
     internal class LottieDrawableState() : ConstantState() {
@@ -468,9 +423,6 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
     }
 
     companion object {
-        private const val TAG = "LottieDrawable"
-        private const val UNDEFINED_SIZE_IN_DIP = 50
-
         /**
          * Repeats playback without an end.
          */
@@ -486,35 +438,14 @@ class LottieDrawable internal constructor() : Drawable(), Animatable {
          */
         const val REVERSE = LottieConstants.REVERSE
 
-        /**
-         * Creates a [LottieDrawable] from a drawable XML resource declared with `LottieDrawable` attributes.
-         */
         @JvmStatic
-        fun create(resources: Resources, @DrawableRes resId: Int): LottieDrawable? {
-            return try {
-                @SuppressLint("ResourceType")
-                val parser = resources.getXml(resId)
-                val attrs = Xml.asAttributeSet(parser)
-                var type: Int
-                while (parser.next().also { type = it } != XmlPullParser.START_TAG &&
-                    type != XmlPullParser.END_DOCUMENT
-                ) {
-                    // Skip until start tag.
-                }
-                if (type != XmlPullParser.START_TAG) {
-                    throw XmlPullParserException("No start tag found")
-                }
-
-                val drawable = LottieDrawable()
-                drawable.inflate(resources, parser, attrs)
-                drawable
-            } catch (e: XmlPullParserException) {
-                Log.e(TAG, "parser error", e)
-                null
-            } catch (e: IOException) {
-                Log.e(TAG, "parser error", e)
-                null
+        fun fromRawResource(resources: Resources, @RawRes resId: Int): LottieDrawable {
+            val drawable = LottieDrawable()
+            drawable.lottieState.composition = LottieComposition.fromRawResource(resources, resId)
+            drawable.lottieState.composition?.let { composition ->
+                drawable.setLastFrame(composition.frameCount)
             }
+            return drawable
         }
     }
 }
