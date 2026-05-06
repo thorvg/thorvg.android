@@ -211,7 +211,7 @@ tasks.register('buildThorvg') {
 
             def buildDir = new File(nativeRootDir, "build-gradle-${target.abiDir}")
             def outputDir = new File(libDir, target.abiDir)
-            def staticLib = new File(buildDir, 'src/libthorvg.a')
+            def staticLib = new File(buildDir, 'src/libthorvg-1.a')
 
             println "Building ThorVG for ${target.abiDir}"
             delete(buildDir)
@@ -252,7 +252,7 @@ tasks.register('buildThorvg') {
                 from staticLib
                 into outputDir
             }
-            println "Copied libthorvg.a to ${outputDir.absolutePath}"
+            println "Copied libthorvg-1.a to ${outputDir.absolutePath}"
         }
     }
 }

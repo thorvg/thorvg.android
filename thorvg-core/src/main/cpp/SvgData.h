@@ -37,13 +37,14 @@ namespace SvgComposition {
     class Data {
     public:
         Data(const char* content, uint32_t strLength);
+        ~Data();
         void setBufferSize(uint32_t* buffer, float width, float height);
         void draw();
         tvg::Picture* mPicture = nullptr;
         float mWidth = 0.0f;
         float mHeight = 0.0f;
     private:
-        std::unique_ptr<tvg::SwCanvas> mCanvas;
+        tvg::SwCanvas* mCanvas = nullptr;
     };
 
 } // namespace SvgComposition

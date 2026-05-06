@@ -20,7 +20,6 @@
  * SOFTWARE.
  */
 
-#include <thread>
 #include <android/log.h>
 #include "LottieData.h"
 
@@ -33,22 +32,26 @@ LottieDrawable::Data::Data(const char *content, uint32_t length) {
     mAnimation = tvg::Animation::gen();
     // Acquire a picture which associated with the animation.
     auto picture = mAnimation->picture();
-    if (picture->load(mContent, mContentLength, "lottie", true) != tvg::Result::Success) {
+    if (picture->load(mContent, mContentLength, "lottie", nullptr, true) != tvg::Result::Success) {
         LOGE("Error: Lottie is not supported. Did you enable Lottie Loader?");
         return;
     }
 
     // Create a canvas
-    mCanvas = tvg::SwCanvas::gen();
-    mCanvas->push(tvg::cast<tvg::Picture>(picture));
+    mCanvas = tvg::SwCanvas::gen(tvg::EngineOption::Default);
+    mCanvas->add(picture);
+}
+
+LottieDrawable::Data::~Data() {
+    delete(mCanvas);
+    delete(mAnimation);
 }
 
 void LottieDrawable::Data::setBufferSize(uint32_t *buffer, float width, float height) {
     LOGI("LottieDrawable::Data::setBufferSize width=%f, height=%f", width, height);
     mCanvas->sync();
-    mCanvas->clear(false);
     mCanvas->target(buffer, (uint32_t) width, (uint32_t) width, (uint32_t) height,
-            tvg::SwCanvas::ABGR8888);
+            tvg::ColorSpace::ABGR8888);
     mAnimation->picture()->size(width, height);
 }
 
@@ -56,7 +59,7 @@ void LottieDrawable::Data::draw(uint32_t frame) {
     if (!mCanvas) return;
 //    LOGI("LottieDrawable::Data::draw mAnimation=%d", mAnimation->curFrame());
     mAnimation->frame(frame);
-    mCanvas->update(mAnimation->picture());
-    mCanvas->draw();
+    mCanvas->update();
+    mCanvas->draw(true);
     mCanvas->sync();
 }

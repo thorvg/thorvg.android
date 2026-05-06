@@ -32,7 +32,7 @@ Java_org_thorvg_core_svg_SvgNativeBindings_nCreateSvg(JNIEnv *env, jclass clazz,
         return 0;
     }
 
-    if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
+    if (tvg::Initializer::init(3) != tvg::Result::Success) {
         return 0;
     }
 
@@ -52,7 +52,7 @@ Java_org_thorvg_core_svg_SvgNativeBindings_nCreateSvg(JNIEnv *env, jclass clazz,
 
 extern "C" void
 Java_org_thorvg_core_svg_SvgNativeBindings_nDestroySvg(JNIEnv* env, jclass clazz, jlong svg_ptr) {
-    tvg::Initializer::term(tvg::CanvasEngine::Sw);
+    tvg::Initializer::term();
 
     if (svg_ptr == 0) {
         return;

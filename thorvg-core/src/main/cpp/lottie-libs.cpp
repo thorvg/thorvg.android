@@ -34,7 +34,7 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jcla
         return 0;
     }
 
-    if (tvg::Initializer::init(tvg::CanvasEngine::Sw, 3) != tvg::Result::Success) {
+    if (tvg::Initializer::init(3) != tvg::Result::Success) {
         return 0;
     }
 
@@ -54,7 +54,7 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jcla
 
 extern "C" void
 Java_org_thorvg_core_lottie_LottieNativeBindings_nDestroyLottie(JNIEnv* env, jclass clazz, jlong lottie_ptr) {
-    tvg::Initializer::term(tvg::CanvasEngine::Sw);
+    tvg::Initializer::term();
 
     if (lottie_ptr == 0) {
         return;
