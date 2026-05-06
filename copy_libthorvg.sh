@@ -9,7 +9,7 @@ abi="${1:-all}"
 
 copy_one() {
     abi_dir="$1"
-    lib_source="$THORVG_DIR/build-${abi_dir}/src/libthorvg.a"
+    lib_source="$THORVG_DIR/build-${abi_dir}/src/libthorvg-1.a"
 
     if [ ! -d "$THORVG_DIR/lib" ]; then
         echo "lib directory doesn't exist in thorvg directory. Creating lib directory..."
@@ -24,13 +24,13 @@ copy_one() {
     fi
 
     if [ ! -f "$lib_source" ]; then
-        echo "libthorvg.a not found: $lib_source"
+        echo "libthorvg-1.a not found: $lib_source"
         echo "Run ./build_libthorvg.sh ${abi_dir} first."
         exit 1
     fi
 
     cp "$lib_source" "$THORVG_DIR/lib/$abi_dir/"
-    echo "libthorvg.a copied to thorvg/lib/$abi_dir/"
+    echo "libthorvg-1.a copied to thorvg/lib/$abi_dir/"
 }
 
 case "$abi" in

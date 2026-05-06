@@ -37,11 +37,12 @@ namespace LottieDrawable {
     class Data {
     public:
         Data(const char* content, uint32_t strLength);
+        ~Data();
         void setBufferSize(uint32_t* buffer, float width, float height);
         void draw(uint32_t frame);
-        std::unique_ptr<tvg::Animation> mAnimation;
+        tvg::Animation* mAnimation = nullptr;
     private:
-        std::unique_ptr<tvg::SwCanvas> mCanvas;
+        tvg::SwCanvas* mCanvas = nullptr;
         const char* mContent;
         uint32_t mContentLength;
     };

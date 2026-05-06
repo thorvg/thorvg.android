@@ -26,16 +26,21 @@ SvgComposition::Data::Data(const char *content, uint32_t length) {
     SVG_LOGI("SvgComposition::Data::Data length=%d", length);
 
     auto picture = tvg::Picture::gen();
-    if (picture->load(content, length, "svg", true) != tvg::Result::Success) {
+    if (picture->load(content, length, "svg", nullptr, true) != tvg::Result::Success) {
         SVG_LOGE("Error: SVG is not supported. Did you enable SVG Loader?");
+        tvg::Paint::rel(picture);
         return;
     }
 
     picture->size(&mWidth, &mHeight);
 
-    mCanvas = tvg::SwCanvas::gen();
-    mPicture = picture.get();
-    mCanvas->push(std::move(picture));
+    mCanvas = tvg::SwCanvas::gen(tvg::EngineOption::Default);
+    mPicture = picture;
+    mCanvas->add(mPicture);
+}
+
+SvgComposition::Data::~Data() {
+    delete(mCanvas);
 }
 
 void SvgComposition::Data::setBufferSize(uint32_t *buffer, float width, float height) {
@@ -43,9 +48,8 @@ void SvgComposition::Data::setBufferSize(uint32_t *buffer, float width, float he
 
     SVG_LOGI("SvgComposition::Data::setBufferSize width=%f, height=%f", width, height);
     mCanvas->sync();
-    mCanvas->clear(false);
     mCanvas->target(buffer, (uint32_t) width, (uint32_t) width, (uint32_t) height,
-                    tvg::SwCanvas::ABGR8888);
+                    tvg::ColorSpace::ABGR8888);
     mPicture->size(width, height);
 }
 
@@ -53,6 +57,6 @@ void SvgComposition::Data::draw() {
     if (!mCanvas || !mPicture) return;
 
     mCanvas->update();
-    mCanvas->draw();
+    mCanvas->draw(true);
     mCanvas->sync();
 }
