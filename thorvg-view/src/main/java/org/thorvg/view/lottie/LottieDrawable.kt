@@ -52,6 +52,7 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
     private var isStarted = false
     private var repeated = 0
     private var frame = 0
+    private var renderedFrame = 0
 
     private val handler = Handler(Looper.getMainLooper())
     private val nextFrameRunnable = Runnable { invalidateSelf() }
@@ -89,7 +90,9 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
 
             val startTime = System.nanoTime()
 
-            getFrame(frame)?.let { bitmap ->
+            val frameToRender = frame
+            getFrame(frameToRender)?.let { bitmap ->
+                renderedFrame = frameToRender
                 canvas.drawBitmap(bitmap, 0f, 0f, tmpPaint)
             }
 
@@ -242,11 +245,13 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
      * Starts playback from [firstFrame].
      */
     override fun start() {
+        handler.removeCallbacks(nextFrameRunnable)
         isRunning = true
         isEnded = false
         isStarted = false
         repeated = 0
         frame = lottieState.firstFrame
+        renderedFrame = frame
         invalidateSelf()
     }
 
@@ -278,7 +283,7 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
      * Current frame index being rendered by this drawable.
      */
     val currentFrame: Int
-        get() = frame
+        get() = renderedFrame
 
     /**
      * Registers a listener for playback lifecycle callbacks.
@@ -443,7 +448,7 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
             val drawable = LottieDrawable()
             drawable.lottieState.composition = LottieComposition.fromRawResource(resources, resId)
             drawable.lottieState.composition?.let { composition ->
-                drawable.setLastFrame(composition.frameCount)
+                drawable.setLastFrame(composition.lastFrame)
             }
             return drawable
         }
