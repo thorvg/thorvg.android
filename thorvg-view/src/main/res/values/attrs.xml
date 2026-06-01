@@ -4,10 +4,16 @@
     <attr name="speed" format="float" />
     <attr name="frameFrom" format="integer" />
     <attr name="frameTo" format="integer" />
+    <attr name="renderer" format="enum">
+        <enum name="default_renderer" value="0" />
+        <enum name="sw" value="1" />
+        <enum name="gl" value="2" />
+    </attr>
 
     <declare-styleable name="LottieView">
         <attr name="rawRes" />
         <attr name="speed" />
+        <attr name="renderer" />
         <attr name="android:repeatCount" />
         <attr name="android:repeatMode" />
         <attr name="android:autoStart" />

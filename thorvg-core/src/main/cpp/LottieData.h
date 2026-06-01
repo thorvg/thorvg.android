@@ -25,6 +25,7 @@
 
 #include <cstdint>
 #include <iostream>
+#include <jni.h>
 #include "thorvg.h"
 
 #define LOG_TAG "LottieDrawable"
@@ -34,15 +35,25 @@
 
 namespace LottieDrawable {
 
-    class Data {
-    public:
-        Data(const char* content, uint32_t strLength);
-        ~Data();
-        void setBufferSize(uint32_t* buffer, float width, float height);
+    struct Data {
+        Data(JNIEnv* env, jstring content);
+        virtual ~Data();
+        bool valid();
         void draw(uint32_t frame);
+
         tvg::Animation* mAnimation = nullptr;
-    private:
-        tvg::SwCanvas* mCanvas = nullptr;
+        tvg::Canvas* mCanvas = nullptr;
+        bool mValid = false;
+    };
+
+    struct SwData : Data {
+        SwData(JNIEnv* env, jstring content);
+        bool resize(uint32_t* buffer, float width, float height);
+    };
+
+    struct GlData : Data {
+        GlData(JNIEnv* env, jstring content);
+        bool resize(void* display, void* surface, void* context, int32_t id, float width, float height);
     };
 
 } // namespace LottieDrawable

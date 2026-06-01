@@ -20,7 +20,7 @@
  * SOFTWARE.
  */
 
-package org.thorvg.view.lottie
+package org.thorvg.view.lottie.sw
 
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -34,11 +34,12 @@ import android.os.Handler
 import android.os.Looper
 import androidx.annotation.RawRes
 import androidx.annotation.FloatRange
-import org.thorvg.core.lottie.LottieComposition
 import org.thorvg.core.lottie.LottieConstants
+import org.thorvg.core.lottie.LottieSwComposition
 import org.thorvg.core.lottie.LottieRenderState
 import org.thorvg.core.lottie.LottieRepeatMode
 import org.thorvg.view.ThorVGDrawable
+import org.thorvg.view.lottie.LottieListener
 
 /**
  * Drawable adapter that renders a ThorVG Lottie composition into an Android [Canvas].
@@ -99,13 +100,14 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
                     dispatchAnimationEnd()
                 }
             } else {
+                val lastFrame = lottieState.lastFrame
                 var resetFrame = false
                 frame += lottieState.framesPerUpdate
-                if (frame > lottieState.lastFrame) {
+                if (frame > lastFrame) {
                     frame = lottieState.firstFrame
                     resetFrame = true
                 } else if (frame < lottieState.firstFrame) {
-                    frame = lottieState.lastFrame
+                    frame = lastFrame
                     resetFrame = true
                 }
                 if (resetFrame) {
@@ -176,23 +178,16 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
         get() = lottieState.repeatMode
 
     /**
-     * Sets the first frame that playback is allowed to render.
-     */
-    fun setFirstFrame(frame: Int) {
-        lottieState.firstFrame = frame
-    }
-
-    /**
      * First frame used for playback.
      */
     val firstFrame: Int
         get() = lottieState.firstFrame
 
     /**
-     * Sets the last frame that playback is allowed to render.
+     * Sets the frame range that playback is allowed to render.
      */
-    fun setLastFrame(frame: Int) {
-        lottieState.lastFrame = frame
+    fun setFrameBounds(firstFrame: Int, lastFrame: Int? = null) {
+        lottieState.setFrameBounds(firstFrame, lastFrame)
     }
 
     /**
@@ -303,35 +298,19 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
     internal class LottieDrawableState() : ConstantState() {
         private val renderState = LottieRenderState()
 
-        var composition: LottieComposition?
-            get() = renderState.composition
+        var composition: LottieSwComposition? = null
+            get() = field
             set(value) {
+                field = value
                 renderState.composition = value
+                if (value != null && width > 0 && height > 0) {
+                    value.setSize(width, height)
+                }
             }
 
-        var baseWidth: Float
-            get() = renderState.baseWidth
-            set(value) {
-                renderState.baseWidth = value
-            }
+        var width = 0
 
-        var baseHeight: Float
-            get() = renderState.baseHeight
-            set(value) {
-                renderState.baseHeight = value
-            }
-
-        var width: Int
-            get() = renderState.width
-            set(value) {
-                renderState.width = value
-            }
-
-        var height: Int
-            get() = renderState.height
-            set(value) {
-                renderState.height = value
-            }
+        var height = 0
 
         var repeatCount: Int
             get() = renderState.repeatCount
@@ -363,17 +342,11 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
                 renderState.speed = value
             }
 
-        var firstFrame: Int
+        val firstFrame: Int
             get() = renderState.firstFrame
-            set(value) {
-                renderState.firstFrame = value
-            }
 
-        var lastFrame: Int
+        val lastFrame: Int
             get() = renderState.lastFrame
-            set(value) {
-                renderState.lastFrame = value
-            }
 
         var frameInterval: Long
             get() = renderState.frameInterval
@@ -384,8 +357,6 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
         constructor(copy: LottieDrawableState?) : this() {
             copy ?: return
             composition = copy.composition?.copy()
-            baseWidth = copy.baseWidth
-            baseHeight = copy.baseHeight
             width = copy.width
             height = copy.height
             repeatCount = copy.repeatCount
@@ -393,25 +364,31 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
             framesPerUpdate = copy.framesPerUpdate
             autoPlay = copy.autoPlay
             speed = copy.speed
-            firstFrame = copy.firstFrame
-            lastFrame = copy.lastFrame
+            setFrameBounds(copy.firstFrame, copy.lastFrame)
             frameInterval = copy.frameInterval
         }
 
+        fun setFrameBounds(firstFrame: Int, lastFrame: Int?) {
+            renderState.setFrameBounds(firstFrame, lastFrame)
+        }
+
         fun releaseComposition() {
-            renderState.releaseComposition()
+            composition?.release()
+            composition = null
         }
 
         fun valid(): Boolean {
-            return renderState.valid()
+            return composition?.isValid() == true
         }
 
         fun setCompositionSize(width: Int, height: Int) {
-            renderState.setCompositionSize(width, height)
+            this.width = width
+            this.height = height
+            composition?.setSize(width, height)
         }
 
         fun renderFrame(frame: Int): Bitmap? {
-            return renderState.renderFrame(frame)
+            return composition?.renderFrame(frame)
         }
 
         override fun newDrawable(): Drawable {
@@ -442,10 +419,8 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
         @JvmStatic
         fun fromRawResource(resources: Resources, @RawRes resId: Int): LottieDrawable {
             val drawable = LottieDrawable()
-            drawable.lottieState.composition = LottieComposition.fromRawResource(resources, resId)
-            drawable.lottieState.composition?.let { composition ->
-                drawable.setLastFrame(composition.lastFrame)
-            }
+            drawable.lottieState.composition = LottieSwComposition.fromRawResource(resources, resId)
+            drawable.setFrameBounds(drawable.firstFrame)
             return drawable
         }
     }

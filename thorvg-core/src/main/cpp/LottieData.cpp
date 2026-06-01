@@ -23,20 +23,24 @@
 #include <android/log.h>
 #include "LottieData.h"
 
-LottieDrawable::Data::Data(const char *content, uint32_t length) {
+LottieDrawable::Data::Data(JNIEnv* env, jstring content) {
+    if (content == nullptr) return;
+
+    const char* inputStr = env->GetStringUTFChars(content, nullptr);
+    if (inputStr == nullptr) return;
+
+    auto length = static_cast<uint32_t>(env->GetStringUTFLength(content));
     LOGI("LottieDrawable::Data::Data length=%d", length);
-    // Generate an animation
+
     mAnimation = tvg::Animation::gen();
-    // Acquire a picture which associated with the animation.
     auto picture = mAnimation->picture();
-    if (picture->load(content, length, "lottie", nullptr, true) != tvg::Result::Success) {
+    if (picture->load(inputStr, length, "lottie", nullptr, true) != tvg::Result::Success) {
         LOGE("Error: Lottie is not supported. Did you enable Lottie Loader?");
+        env->ReleaseStringUTFChars(content, inputStr);
         return;
     }
-
-    // Create a canvas
-    mCanvas = tvg::SwCanvas::gen(tvg::EngineOption::Default);
-    mCanvas->add(picture);
+    env->ReleaseStringUTFChars(content, inputStr);
+    mValid = true;
 }
 
 LottieDrawable::Data::~Data() {
@@ -44,19 +48,44 @@ LottieDrawable::Data::~Data() {
     delete(mAnimation);
 }
 
-void LottieDrawable::Data::setBufferSize(uint32_t *buffer, float width, float height) {
-    LOGI("LottieDrawable::Data::setBufferSize width=%f, height=%f", width, height);
-    mCanvas->sync();
-    mCanvas->target(buffer, (uint32_t) width, (uint32_t) width, (uint32_t) height,
-            tvg::ColorSpace::ABGR8888);
-    mAnimation->picture()->size(width, height);
+bool LottieDrawable::Data::valid() {
+    return mValid && mCanvas != nullptr;
 }
 
 void LottieDrawable::Data::draw(uint32_t frame) {
-    if (!mCanvas) return;
 //    LOGI("LottieDrawable::Data::draw mAnimation=%d", mAnimation->curFrame());
     mAnimation->frame(frame);
     mCanvas->update();
     mCanvas->draw(true);
     mCanvas->sync();
+}
+
+LottieDrawable::SwData::SwData(JNIEnv* env, jstring content) : Data(env, content) {
+    if (!mValid) return;
+
+    mCanvas = tvg::SwCanvas::gen(tvg::EngineOption::Default);
+    mCanvas->add(mAnimation->picture());
+}
+
+bool LottieDrawable::SwData::resize(uint32_t *buffer, float width, float height) {
+    LOGI("LottieDrawable::SwData::resize width=%f, height=%f", width, height);
+    mCanvas->sync();
+    auto result = static_cast<tvg::SwCanvas*>(mCanvas)->target(buffer, (uint32_t) width, (uint32_t) width, (uint32_t) height, tvg::ColorSpace::ABGR8888);
+    mAnimation->picture()->size(width, height);
+    return result == tvg::Result::Success;
+}
+
+LottieDrawable::GlData::GlData(JNIEnv* env, jstring content) : Data(env, content) {
+    if (!mValid) return;
+
+    mCanvas = tvg::GlCanvas::gen(tvg::EngineOption::Default);
+    mCanvas->add(mAnimation->picture());
+}
+
+bool LottieDrawable::GlData::resize(void* display, void* surface, void* context, int32_t id, float width, float height) {
+    LOGI("LottieDrawable::GlData::resize width=%f, height=%f, fbo=%d", width, height, id);
+    mCanvas->sync();
+    auto result = static_cast<tvg::GlCanvas*>(mCanvas)->target(display, surface, context, id, (uint32_t) width, (uint32_t) height, tvg::ColorSpace::ABGR8888S);
+    mAnimation->picture()->size(width, height);
+    return result == tvg::Result::Success;
 }
