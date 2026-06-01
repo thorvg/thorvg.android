@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 - 2026 ThorVG project. All rights reserved.
+ * Copyright (c) 2026 ThorVG project. All rights reserved.
 
  * Permission is hereby granted, free of charge, to any person obtaining a copy
  * of this software and associated documentation files (the "Software"), to deal
@@ -20,31 +20,22 @@
  * SOFTWARE.
  */
 
-#ifndef THORVG_ANDROID_SVGDATA_H
-#define THORVG_ANDROID_SVGDATA_H
+package org.thorvg.compose.lottie
 
-#include <cstdint>
-#include <android/log.h>
-#include "thorvg.h"
+/**
+ * Selects which ThorVG renderer backs a [Lottie] composable.
+ */
+enum class LottieRenderer {
+    /**
+     * Prefer the GPU renderer and fall back to the software renderer if GL
+     * reports a render failure (e.g. unavailable EGL context, surface bind
+     * failure, draw failure).
+     */
+    Default,
 
-#define SVG_LOG_TAG "SvgComposition"
+    /** Software bitmap renderer. */
+    Sw,
 
-#define SVG_LOGI(...) __android_log_print(ANDROID_LOG_INFO, SVG_LOG_TAG, __VA_ARGS__)
-#define SVG_LOGE(...) __android_log_print(ANDROID_LOG_ERROR, SVG_LOG_TAG, __VA_ARGS__)
-
-namespace SvgComposition {
-
-    struct Data {
-        Data(const char* content, uint32_t strLength);
-        ~Data();
-        void setBufferSize(uint32_t* buffer, float width, float height);
-        void draw();
-        tvg::Picture* mPicture = nullptr;
-        float mWidth = 0.0f;
-        float mHeight = 0.0f;
-        tvg::SwCanvas* mCanvas = nullptr;
-    };
-
-} // namespace SvgComposition
-
-#endif //THORVG_ANDROID_SVGDATA_H
+    /** GPU renderer hosted in a TextureView. */
+    Gl
+}

@@ -32,21 +32,27 @@ import java.io.IOException
 import java.io.InputStreamReader
 
 /**
- * ThorVG-backed Lottie composition that can render frames into a bitmap buffer.
+ * ThorVG-backed Lottie composition.
+ *
+ * Each subclass owns a native handle bound to a specific renderer.
+ * Use [LottieSwComposition] for bitmap output, or [LottieGlComposition] for GL output.
  */
-class LottieComposition private constructor(
-    private val nativeLottie: NativeLottie
+sealed class LottieComposition protected constructor(
+    protected val jsonContent: String,
+    nativeCreator: (String, IntArray) -> Long
 ) {
-    /**
-     * Creates a composition from raw Lottie JSON content.
-     */
-    constructor(content: String) : this(NativeLottie(content))
+    protected var nativePtr: Long = 0L
+        private set
 
     /**
      * Total frame count reported by the native animation.
      */
     val frameCount: Int
-        get() = nativeLottie.frameCount
+
+    /**
+     * Total animation duration in milliseconds.
+     */
+    val duration: Long
 
     /**
      * Last valid frame index that can be rendered.
@@ -57,57 +63,38 @@ class LottieComposition private constructor(
             return if (count > 0) count - 1 else 0
         }
 
-    /**
-     * Total animation duration in milliseconds.
-     */
-    val duration: Long
-        get() = nativeLottie.duration
-
-    /**
-     * Allocates or resizes the backing buffer used for frame rendering.
-     */
-    fun setSize(width: Int, height: Int) {
-        require(width > 0) { "LottieComposition requires width > 0" }
-        require(height > 0) { "LottieComposition requires height > 0" }
-        nativeLottie.setBufferSize(width, height)
+    init {
+        val outValues = IntArray(LOTTIE_INFO_COUNT)
+        nativePtr = nativeCreator(jsonContent, outValues)
+        frameCount = outValues[LOTTIE_INFO_FRAME_COUNT]
+        duration = outValues[LOTTIE_INFO_DURATION].toLong()
     }
 
     /**
-     * Renders the requested frame into the current backing bitmap.
+     * Configures the output dimensions used for subsequent frame renders.
      */
-    fun renderFrame(frame: Int): Bitmap? {
-        return nativeLottie.getBuffer(frame)
-    }
+    abstract fun setSize(width: Int, height: Int)
 
     /**
-     * Releases the native animation and any allocated bitmap buffer.
+     * Releases the underlying native animation and any renderer-specific buffers.
      */
-    fun release() {
-        nativeLottie.destroy()
+    open fun release() {
+        val ptr = nativePtr
+        if (ptr == 0L) return
+
+        nativePtr = 0L
+        LottieNativeBindings.nDestroyLottie(ptr)
     }
 
-    /**
-     * Creates a new composition instance backed by a separate native handle using the same source content.
-     */
-    fun copy(): LottieComposition {
-        return LottieComposition(nativeLottie.copy())
-    }
-
-    fun isValid(): Boolean {
-        return nativeLottie.nativePtr != 0L
-    }
+    fun isValid(): Boolean = nativePtr != 0L
 
     companion object {
-        /**
-         * Creates a composition from a raw resource that contains Lottie JSON.
-         */
-        @JvmStatic
-        fun fromRawResource(resources: Resources, @RawRes resId: Int): LottieComposition {
-            return LottieComposition(loadJsonFile(resources, resId))
-        }
+        private const val LOTTIE_INFO_FRAME_COUNT = 0
+        private const val LOTTIE_INFO_DURATION = 1
+        private const val LOTTIE_INFO_COUNT = 2
 
         @Throws(IOException::class)
-        private fun loadJsonFile(resources: Resources, @RawRes resId: Int): String {
+        internal fun loadJsonFile(resources: Resources, @RawRes resId: Int): String {
             return try {
                 resources.openRawResource(resId).use { inputStream ->
                     BufferedReader(InputStreamReader(inputStream)).use { reader ->
@@ -122,17 +109,170 @@ class LottieComposition private constructor(
 }
 
 /**
+ * Lottie composition that renders into an Android [Bitmap] via ThorVG's SW canvas.
+ */
+class LottieSwComposition(jsonContent: String) :
+    LottieComposition(jsonContent, LottieNativeBindings::nCreateSwLottie) {
+
+    private var buffer: Bitmap? = null
+
+    /**
+     * Allocates or resizes the backing buffer used for frame rendering.
+     */
+    override fun setSize(width: Int, height: Int) {
+        if (!isValid()) return
+        if (width <= 0 || height <= 0) return
+
+        val existing = buffer
+        if (existing != null &&
+            !existing.isRecycled &&
+            existing.width == width &&
+            existing.height == height
+        ) {
+            return
+        }
+
+        existing?.recycle()
+        val newBuffer = createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        buffer = newBuffer
+        LottieNativeBindings.nResizeSwLottie(nativePtr, newBuffer, width.toFloat(), height.toFloat())
+    }
+
+    /**
+     * Renders the requested frame into the current backing bitmap.
+     */
+    fun renderFrame(frame: Int): Bitmap? {
+        if (!isValid()) return null
+        buffer?.let {
+            LottieNativeBindings.nDrawSwLottieFrame(nativePtr, it, frame)
+        }
+        return buffer
+    }
+
+    /**
+     * Creates a new composition backed by a separate native handle using the same source content.
+     */
+    fun copy(): LottieSwComposition = LottieSwComposition(jsonContent)
+
+    override fun release() {
+        buffer?.recycle()
+        buffer = null
+        super.release()
+    }
+
+    companion object {
+        /**
+         * Creates a SW composition from a raw resource that contains Lottie JSON.
+         */
+        @JvmStatic
+        fun fromRawResource(resources: Resources, @RawRes resId: Int): LottieSwComposition {
+            return LottieSwComposition(loadJsonFile(resources, resId))
+        }
+    }
+}
+
+/**
+ * Lottie composition that renders into an externally provided GL framebuffer via ThorVG's GL canvas.
+ *
+ * The owner is responsible for making the EGL context current and binding the framebuffer
+ * before calling [renderFrame].
+ */
+class LottieGlComposition(jsonContent: String) :
+    LottieComposition(jsonContent, LottieNativeBindings::nCreateGlLottie) {
+
+    private var width = 0
+    private var height = 0
+    private var boundDisplay = 0L
+    private var boundSurface = 0L
+    private var boundContext = 0L
+    private var boundFramebufferId = -1
+    private var boundWidth = 0
+    private var boundHeight = 0
+
+    /**
+     * Records the output dimensions. The native binding is applied by the next [target] call.
+     */
+    override fun setSize(width: Int, height: Int) {
+        if (width <= 0 || height <= 0) return
+        this.width = width
+        this.height = height
+    }
+
+    /**
+     * Binds the GL render target (EGL handles + framebuffer id) for subsequent [renderFrame] calls.
+     *
+     * Caller must have the EGL context current. Uses the dimensions set by [setSize].
+     */
+    fun target(display: Long, surface: Long, context: Long, framebufferId: Int): Boolean {
+        if (!isValid()) return false
+        if (width <= 0 || height <= 0) return false
+
+        if (boundDisplay == display &&
+            boundSurface == surface &&
+            boundContext == context &&
+            boundFramebufferId == framebufferId &&
+            boundWidth == width &&
+            boundHeight == height
+        ) {
+            return true
+        }
+
+        val resized = LottieNativeBindings.nResizeGlLottie(
+            nativePtr,
+            display,
+            surface,
+            context,
+            framebufferId,
+            width.toFloat(),
+            height.toFloat()
+        )
+        if (resized) {
+            boundDisplay = display
+            boundSurface = surface
+            boundContext = context
+            boundFramebufferId = framebufferId
+            boundWidth = width
+            boundHeight = height
+        }
+        return resized
+    }
+
+    /**
+     * Renders the requested frame into the bound GL framebuffer.
+     */
+    fun renderFrame(frame: Int): Boolean {
+        if (!isValid()) return false
+        LottieNativeBindings.nDrawGlLottieFrame(nativePtr, frame)
+        return true
+    }
+
+    override fun release() {
+        width = 0
+        height = 0
+        boundDisplay = 0L
+        boundSurface = 0L
+        boundContext = 0L
+        boundFramebufferId = -1
+        boundWidth = 0
+        boundHeight = 0
+        super.release()
+    }
+
+    companion object {
+        /**
+         * Creates a GL composition from a raw resource that contains Lottie JSON.
+         */
+        @JvmStatic
+        fun fromRawResource(resources: Resources, @RawRes resId: Int): LottieGlComposition {
+            return LottieGlComposition(loadJsonFile(resources, resId))
+        }
+    }
+}
+
+/**
  * Shared mutable playback state used by UI adapters.
  */
 class LottieRenderState {
-    var composition: LottieComposition? = null
-
-    var baseWidth = 0f
-    var baseHeight = 0f
-
-    var width = 0
-    var height = 0
-
     var repeatMode = LottieConstants.RESTART
         set(@LottieRepeatMode value) {
             field = value
@@ -148,108 +288,53 @@ class LottieRenderState {
         }
 
     var firstFrame = 0
-        set(value) {
-            field = value.coerceAtMost(lastFrame)
-            updateFrameInterval()
-        }
-
+        private set
     var lastFrame = 0
-        set(value) {
-            composition?.let {
-                field = value.coerceAtLeast(0).coerceAtMost(it.lastFrame)
-                updateFrameInterval()
-            }
-        }
+        private set
 
     var frameInterval = 0L
     var framesPerUpdate = 1
     var autoPlay = false
 
-    fun releaseComposition() {
-        composition?.release()
-        composition = null
-    }
-
-    fun valid(): Boolean {
-        return composition?.isValid() == true
-    }
-
-    fun setCompositionSize(width: Int, height: Int) {
-        if (width != this.width || height != this.height) {
-            this.width = width
-            this.height = height
-            composition?.setSize(width, height)
+    var composition: LottieComposition? = null
+        set(value) {
+            field = value
+            updateFrameInterval()
         }
+
+    fun copyPlaybackTo(target: LottieRenderState) {
+        target.repeatMode = repeatMode
+        target.repeatCount = repeatCount
+        target.speed = speed
+        target.framesPerUpdate = framesPerUpdate
+        target.autoPlay = autoPlay
     }
 
-    fun renderFrame(frame: Int): Bitmap? {
-        return composition?.renderFrame(frame)
+    fun setFrameBounds(firstFrame: Int, lastFrame: Int? = null) {
+        val resolvedFirstFrame = firstFrame.coerceAtLeast(0)
+        val compositionLastFrame = composition?.lastFrame
+        if (compositionLastFrame == null) {
+            this.firstFrame = resolvedFirstFrame
+            this.lastFrame = lastFrame?.coerceAtLeast(0) ?: 0
+        } else {
+            val resolvedLastFrame = (lastFrame ?: compositionLastFrame)
+                .coerceAtLeast(resolvedFirstFrame)
+                .coerceAtMost(compositionLastFrame)
+            this.firstFrame = resolvedFirstFrame.coerceAtMost(resolvedLastFrame)
+            this.lastFrame = resolvedLastFrame
+        }
+        updateFrameInterval()
     }
 
-    protected fun updateFrameInterval() {
-        val currentComposition = composition ?: return
+    private fun updateFrameInterval() {
         val totalFrames = lastFrame - firstFrame + 1
+        val compositionDuration = composition?.duration ?: 0L
         frameInterval = when {
+            compositionDuration <= 0L -> 0L
             totalFrames <= 0 -> 0L
             speed <= 0f -> 0L
-            else -> (currentComposition.duration / totalFrames / speed).toLong()
+            else -> (compositionDuration / totalFrames / speed).toLong()
         }
     }
-}
 
-private class NativeLottie {
-    val jsonContent: String
-    val nativePtr: Long
-    var frameCount: Int = 0
-    var duration: Long = 0
-    private var buffer: Bitmap? = null
-
-    constructor(copy: NativeLottie) {
-        jsonContent = copy.jsonContent
-        nativePtr = init(copy.jsonContent)
-        frameCount = copy.frameCount
-        duration = copy.duration
-    }
-
-    constructor(content: String) {
-        jsonContent = content
-        nativePtr = init(jsonContent)
-    }
-
-    fun copy(): NativeLottie {
-        return NativeLottie(this)
-    }
-
-    fun destroy() {
-        buffer?.recycle()
-        buffer = null
-        LottieNativeBindings.nDestroyLottie(nativePtr)
-    }
-
-    fun setBufferSize(width: Int, height: Int) {
-        buffer?.recycle()
-        buffer = createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        LottieNativeBindings.nSetLottieBufferSize(nativePtr, buffer, width.toFloat(), height.toFloat())
-    }
-
-    fun getBuffer(frame: Int): Bitmap? {
-        buffer?.let {
-            LottieNativeBindings.nDrawLottieFrame(nativePtr, it, frame)
-        }
-        return buffer
-    }
-
-    private fun init(content: String): Long {
-        val outValues = IntArray(LOTTIE_INFO_COUNT)
-        val pointer = LottieNativeBindings.nCreateLottie(content, outValues)
-        frameCount = outValues[LOTTIE_INFO_FRAME_COUNT]
-        duration = outValues[LOTTIE_INFO_DURATION].toLong()
-        return pointer
-    }
-
-    companion object {
-        private const val LOTTIE_INFO_FRAME_COUNT = 0
-        private const val LOTTIE_INFO_DURATION = 1
-        private const val LOTTIE_INFO_COUNT = 2
-    }
 }

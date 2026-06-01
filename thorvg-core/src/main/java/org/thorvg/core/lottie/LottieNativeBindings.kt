@@ -8,21 +8,41 @@ object LottieNativeBindings {
     }
 
     @JvmStatic
-    external fun nCreateLottie(
+    external fun nCreateSwLottie(
         content: String?,
         outValues: IntArray?
     ): Long
 
     @JvmStatic
-    external fun nSetLottieBufferSize(
+    external fun nCreateGlLottie(
+        content: String?,
+        outValues: IntArray?
+    ): Long
+
+    @JvmStatic
+    external fun nResizeSwLottie(
         lottiePtr: Long,
-        bitmap: Bitmap?,
+        bitmap: Bitmap,
         width: Float,
         height: Float
     )
 
     @JvmStatic
-    external fun nDrawLottieFrame(lottiePtr: Long, bitmap: Bitmap, frame: Int)
+    external fun nResizeGlLottie(
+        lottiePtr: Long,
+        display: Long,
+        surface: Long,
+        context: Long,
+        framebufferId: Int,
+        width: Float,
+        height: Float
+    ): Boolean
+
+    @JvmStatic
+    external fun nDrawSwLottieFrame(lottiePtr: Long, bitmap: Bitmap, frame: Int)
+
+    @JvmStatic
+    external fun nDrawGlLottieFrame(lottiePtr: Long, frame: Int)
 
     @JvmStatic
     external fun nDestroyLottie(lottiePtr: Long)
