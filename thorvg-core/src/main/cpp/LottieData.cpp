@@ -25,14 +25,11 @@
 
 LottieDrawable::Data::Data(const char *content, uint32_t length) {
     LOGI("LottieDrawable::Data::Data length=%d", length);
-    mContent = content;
-    mContentLength = length;
-
     // Generate an animation
     mAnimation = tvg::Animation::gen();
     // Acquire a picture which associated with the animation.
     auto picture = mAnimation->picture();
-    if (picture->load(mContent, mContentLength, "lottie", nullptr, true) != tvg::Result::Success) {
+    if (picture->load(content, length, "lottie", nullptr, true) != tvg::Result::Success) {
         LOGE("Error: Lottie is not supported. Did you enable Lottie Loader?");
         return;
     }

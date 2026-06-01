@@ -10,7 +10,6 @@ object LottieNativeBindings {
     @JvmStatic
     external fun nCreateLottie(
         content: String?,
-        length: Int,
         outValues: IntArray?
     ): Long
 

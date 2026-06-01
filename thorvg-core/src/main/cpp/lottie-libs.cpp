@@ -29,7 +29,7 @@ using namespace std;
 
 extern "C" jlong
 Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jclass clazz,
-        jstring content, jint length, jintArray out_values) {
+        jstring content, jintArray out_values) {
     if (content == nullptr) {
         return 0;
     }
@@ -39,7 +39,8 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jcla
     }
 
     const char* inputStr = env->GetStringUTFChars(content, nullptr);
-    auto* newData = new LottieDrawable::Data(inputStr, length);
+    auto utfLength = static_cast<uint32_t>(env->GetStringUTFLength(content));
+    auto* newData = new LottieDrawable::Data(inputStr, utfLength);
     env->ReleaseStringUTFChars(content, inputStr);
 
     jint* contentInfo = env->GetIntArrayElements(out_values, nullptr);
