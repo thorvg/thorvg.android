@@ -34,6 +34,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.neverEqualPolicy
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -208,7 +209,7 @@ fun Lottie(
     onAnimationEnd: (() -> Unit)? = null
 ) {
     var canvasSize by remember { mutableStateOf(IntSize.Zero) }
-    var currentBitmap by remember(composition) { mutableStateOf<Bitmap?>(null) }
+    var currentBitmap by remember(composition) { mutableStateOf<Bitmap?>(null, neverEqualPolicy()) }
     var consumedResetRequest by remember(composition) { mutableIntStateOf(state.resetRequests) }
 
     LaunchedEffect(
