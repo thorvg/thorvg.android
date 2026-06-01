@@ -43,8 +43,6 @@ namespace LottieDrawable {
         tvg::Animation* mAnimation = nullptr;
     private:
         tvg::SwCanvas* mCanvas = nullptr;
-        const char* mContent;
-        uint32_t mContentLength;
     };
 
 } // namespace LottieDrawable

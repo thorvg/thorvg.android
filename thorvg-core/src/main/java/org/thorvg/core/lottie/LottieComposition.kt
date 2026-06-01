@@ -232,7 +232,7 @@ private class NativeLottie {
 
     private fun init(content: String): Long {
         val outValues = IntArray(LOTTIE_INFO_COUNT)
-        val pointer = LottieNativeBindings.nCreateLottie(content, content.length, outValues)
+        val pointer = LottieNativeBindings.nCreateLottie(content, outValues)
         frameCount = outValues[LOTTIE_INFO_FRAME_COUNT]
         duration = outValues[LOTTIE_INFO_DURATION].toLong()
         return pointer
