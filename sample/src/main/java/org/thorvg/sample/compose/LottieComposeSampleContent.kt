@@ -10,12 +10,17 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.thorvg.compose.lottie.Lottie
+import org.thorvg.compose.lottie.LottieRenderer
 import org.thorvg.compose.lottie.LottieState
 import org.thorvg.compose.lottie.rememberLottieState
 import org.thorvg.core.lottie.LottieConstants
@@ -29,6 +34,7 @@ fun LottieComposeSampleContent(
         isPlaying = true,
         repeatCount = LottieConstants.INFINITE
     )
+    var renderer by remember { mutableStateOf(LottieRenderer.Sw) }
     Column(
         modifier = modifier,
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -37,6 +43,7 @@ fun LottieComposeSampleContent(
         Lottie(
             resId = R.raw.swinging,
             state = lottieState,
+            renderer = renderer,
             modifier = Modifier
                 .size(220.dp)
                 .background(Color.White)
@@ -70,6 +77,20 @@ fun LottieComposeSampleContent(
 
             Button(onClick = { lottieState.play() }) {
                 Text(stringResource(R.string.sample_replay))
+            }
+
+            Button(onClick = {
+                renderer = if (renderer == LottieRenderer.Gl) LottieRenderer.Sw else LottieRenderer.Gl
+            }) {
+                Text(
+                    stringResource(
+                        if (renderer == LottieRenderer.Gl) {
+                            R.string.sample_renderer_to_sw
+                        } else {
+                            R.string.sample_renderer_to_gl
+                        }
+                    )
+                )
             }
         }
 

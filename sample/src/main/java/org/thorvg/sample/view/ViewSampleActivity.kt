@@ -28,7 +28,6 @@ import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
 import org.thorvg.sample.R
-import org.thorvg.sample.SampleType
 
 class ViewSampleActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,20 +38,22 @@ class ViewSampleActivity : AppCompatActivity() {
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
 
         val sampleType = intent.getStringExtra(EXTRA_SAMPLE_TYPE)
-            ?.let(SampleType::valueOf)
-            ?: SampleType.Lottie
+            ?.let(ViewSampleType::valueOf)
+            ?: ViewSampleType.Lottie
 
         supportActionBar?.setTitle(
             when (sampleType) {
-                SampleType.Lottie -> R.string.sample_view_title
-                SampleType.Svg -> R.string.sample_svg_view_title
+                ViewSampleType.Lottie -> R.string.sample_view_title
+                ViewSampleType.LottiePlayback -> R.string.sample_playback_view_title
+                ViewSampleType.Svg -> R.string.sample_svg_view_title
             }
         )
 
         if (savedInstanceState == null) {
             val fragment = when (sampleType) {
-                SampleType.Lottie -> LottieViewSampleFragment()
-                SampleType.Svg -> SvgViewSampleFragment()
+                ViewSampleType.Lottie -> LottieViewSampleFragment()
+                ViewSampleType.LottiePlayback -> LottiePlaybackProfilerFragment()
+                ViewSampleType.Svg -> SvgViewSampleFragment()
             }
 
             supportFragmentManager.beginTransaction()
@@ -69,7 +70,7 @@ class ViewSampleActivity : AppCompatActivity() {
     companion object {
         private const val EXTRA_SAMPLE_TYPE = "sample_type"
 
-        fun createIntent(context: Context, sampleType: SampleType): Intent {
+        fun createIntent(context: Context, sampleType: ViewSampleType): Intent {
             return Intent(context, ViewSampleActivity::class.java).apply {
                 putExtra(EXTRA_SAMPLE_TYPE, sampleType.name)
             }
