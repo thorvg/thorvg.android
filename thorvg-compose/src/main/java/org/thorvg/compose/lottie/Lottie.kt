@@ -45,9 +45,9 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.IntSize
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
-import org.thorvg.core.lottie.LottieComposition
 import org.thorvg.core.lottie.LottieConstants
-import org.thorvg.core.lottie.LottieRenderState
+import org.thorvg.core.lottie.LottieSwComposition
+import org.thorvg.core.lottie.LottieSwRenderState
 import org.thorvg.core.lottie.LottieRepeatMode
 
 /**
@@ -149,13 +149,13 @@ class LottieState internal constructor(
 }
 
 /**
- * Remembers a [LottieComposition] loaded from a raw resource and releases it when it leaves composition.
+ * Remembers a [LottieSwComposition] loaded from a raw resource and releases it when it leaves composition.
  */
 @Composable
-fun rememberLottieComposition(@RawRes resId: Int): LottieComposition {
+fun rememberLottieComposition(@RawRes resId: Int): LottieSwComposition {
     val resources = LocalContext.current.resources
     val composition = remember(resources, resId) {
-        LottieComposition.fromRawResource(resources, resId)
+        LottieSwComposition.fromRawResource(resources, resId)
     }
 
     DisposableEffect(composition) {
@@ -169,6 +169,11 @@ fun rememberLottieComposition(@RawRes resId: Int): LottieComposition {
 
 /**
  * Renders a ThorVG Lottie animation from a raw resource in Compose.
+ *
+ * Use [renderer] to pick between the software bitmap renderer
+ * ([LottieRenderer.Sw], default), the GPU renderer ([LottieRenderer.Gl]),
+ * or [LottieRenderer.Automatic] which prefers GL and falls back to SW on
+ * render failure.
  */
 @Composable
 fun Lottie(
@@ -177,29 +182,61 @@ fun Lottie(
     state: LottieState = rememberLottieState(),
     firstFrame: Int = 0,
     lastFrame: Int? = null,
+    renderer: LottieRenderer = LottieRenderer.Sw,
     onAnimationStart: (() -> Unit)? = null,
     onAnimationRepeat: (() -> Unit)? = null,
     onAnimationEnd: (() -> Unit)? = null
 ) {
-    val composition = rememberLottieComposition(resId)
-    Lottie(
-        composition = composition,
-        modifier = modifier,
-        state = state,
-        firstFrame = firstFrame,
-        lastFrame = lastFrame,
-        onAnimationStart = onAnimationStart,
-        onAnimationRepeat = onAnimationRepeat,
-        onAnimationEnd = onAnimationEnd
-    )
+    // Set to true when GL fails. Compose then switches to the SW path on the
+    // next frame and cleans up the GL renderer and TextureView for us.
+    var glRenderFailed by remember(renderer) { mutableStateOf(false) }
+
+    val effective = when (renderer) {
+        LottieRenderer.Sw -> LottieRenderer.Sw
+        LottieRenderer.Gl -> LottieRenderer.Gl
+        LottieRenderer.Automatic ->
+            if (glRenderFailed) LottieRenderer.Sw else LottieRenderer.Gl
+    }
+
+    when (effective) {
+        LottieRenderer.Sw -> {
+            val composition = rememberLottieComposition(resId)
+            Lottie(
+                composition = composition,
+                modifier = modifier,
+                state = state,
+                firstFrame = firstFrame,
+                lastFrame = lastFrame,
+                onAnimationStart = onAnimationStart,
+                onAnimationRepeat = onAnimationRepeat,
+                onAnimationEnd = onAnimationEnd
+            )
+        }
+
+        LottieRenderer.Gl -> LottieGlAnimation(
+            resId = resId,
+            modifier = modifier,
+            state = state,
+            firstFrame = firstFrame,
+            lastFrame = lastFrame,
+            onAnimationStart = onAnimationStart,
+            onAnimationRepeat = onAnimationRepeat,
+            onAnimationEnd = onAnimationEnd,
+            onRenderFailure = if (renderer == LottieRenderer.Automatic) {
+                { glRenderFailed = true }
+            } else null
+        )
+
+        LottieRenderer.Automatic -> Unit
+    }
 }
 
 /**
- * Renders a ThorVG [LottieComposition] in Compose.
+ * Renders a ThorVG [LottieSwComposition] in Compose.
  */
 @Composable
 fun Lottie(
-    composition: LottieComposition,
+    composition: LottieSwComposition,
     modifier: Modifier = Modifier,
     state: LottieState = rememberLottieState(),
     firstFrame: Int = 0,
@@ -228,7 +265,7 @@ fun Lottie(
             return@LaunchedEffect
         }
 
-        val renderState = LottieRenderState().apply {
+        val renderState = LottieSwRenderState().apply {
             this.composition = composition
             this.repeatMode = state.repeatMode
             this.repeatCount = state.repeatCount
@@ -236,21 +273,23 @@ fun Lottie(
         }
 
         val resolvedFirstFrame = firstFrame.coerceAtLeast(0)
-        renderState.lastFrame = (lastFrame ?: composition.lastFrame)
+        val maxFrame = (composition.frameCount - 1).coerceAtLeast(0)
+        renderState.lastFrame = (lastFrame ?: maxFrame)
             .coerceAtLeast(resolvedFirstFrame)
-            .coerceAtMost(composition.lastFrame)
+            .coerceAtMost(maxFrame)
         renderState.firstFrame = resolvedFirstFrame.coerceAtMost(renderState.lastFrame)
-        renderState.setCompositionSize(canvasSize.width, canvasSize.height)
+        renderState.setSize(canvasSize.width, canvasSize.height)
 
         var repeated = 0
         var started = false
         val shouldReset = state.resetRequests != consumedResetRequest
         consumedResetRequest = state.resetRequests
 
+        val resolvedLastFrame = renderState.resolvedLastFrame()
         var frame = if (shouldReset) {
             renderState.firstFrame
         } else {
-            state.currentFrame.coerceIn(renderState.firstFrame, renderState.lastFrame)
+            state.currentFrame.coerceIn(renderState.firstFrame, resolvedLastFrame)
         }
 
         state.isRunning = state.isPlaying
@@ -275,7 +314,7 @@ fun Lottie(
             val isFiniteEnd =
                 renderState.repeatCount != LottieConstants.INFINITE &&
                     repeated == renderState.repeatCount &&
-                    frame == renderState.lastFrame
+                    frame == resolvedLastFrame
             if (isFiniteEnd) {
                 onAnimationEnd?.invoke()
                 break
@@ -285,11 +324,11 @@ fun Lottie(
 
             var nextFrame = frame + renderState.framesPerUpdate
             var resetFrame = false
-            if (nextFrame > renderState.lastFrame) {
+            if (nextFrame > resolvedLastFrame) {
                 nextFrame = renderState.firstFrame
                 resetFrame = true
             } else if (nextFrame < renderState.firstFrame) {
-                nextFrame = renderState.lastFrame
+                nextFrame = resolvedLastFrame
                 resetFrame = true
             }
 

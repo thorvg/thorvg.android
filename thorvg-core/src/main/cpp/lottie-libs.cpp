@@ -27,9 +27,8 @@
 
 using namespace std;
 
-extern "C" jlong
-Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jclass clazz,
-        jstring content, jintArray out_values) {
+template <typename LottieData>
+static jlong createLottie(JNIEnv *env, jstring content, jintArray out_values) {
     if (content == nullptr) {
         return 0;
     }
@@ -40,7 +39,7 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jcla
 
     const char* inputStr = env->GetStringUTFChars(content, nullptr);
     auto utfLength = static_cast<uint32_t>(env->GetStringUTFLength(content));
-    auto* newData = new LottieDrawable::Data(inputStr, utfLength);
+    auto* newData = new LottieData(inputStr, utfLength);
     env->ReleaseStringUTFChars(content, inputStr);
 
     jint* contentInfo = env->GetIntArrayElements(out_values, nullptr);
@@ -51,6 +50,18 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateLottie(JNIEnv *env, jcla
     }
 
     return reinterpret_cast<jlong>(newData);
+}
+
+extern "C" jlong
+Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateSwLottie(JNIEnv *env, jclass clazz,
+        jstring content, jintArray out_values) {
+    return createLottie<LottieDrawable::SwData>(env, content, out_values);
+}
+
+extern "C" jlong
+Java_org_thorvg_core_lottie_LottieNativeBindings_nCreateGlLottie(JNIEnv *env, jclass clazz,
+        jstring content, jintArray out_values) {
+    return createLottie<LottieDrawable::GlData>(env, content, out_values);
 }
 
 extern "C" void
@@ -65,22 +76,41 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nDestroyLottie(JNIEnv* env, jcl
 }
 
 extern "C" void
-Java_org_thorvg_core_lottie_LottieNativeBindings_nSetLottieBufferSize(JNIEnv* env, jclass clazz,
+Java_org_thorvg_core_lottie_LottieNativeBindings_nResizeSwLottie(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jfloat width, jfloat height) {
     if (lottie_ptr == 0) {
         return;
     }
 
-    auto* data = reinterpret_cast<LottieDrawable::Data*>(lottie_ptr);
+    auto* data = reinterpret_cast<LottieDrawable::SwData*>(lottie_ptr);
     void *buffer;
     if (AndroidBitmap_lockPixels(env, bitmap, &buffer) >= 0) {
-        data->setBufferSize((uint32_t *) buffer, width, height);
+        data->resize((uint32_t *) buffer, width, height);
         AndroidBitmap_unlockPixels(env, bitmap);
     }
 }
 
+extern "C" jboolean
+Java_org_thorvg_core_lottie_LottieNativeBindings_nResizeGlLottie(JNIEnv* env, jclass clazz,
+        jlong lottie_ptr, jlong display, jlong surface, jlong context, jint framebuffer_id,
+        jfloat width, jfloat height) {
+    if (lottie_ptr == 0) {
+        return JNI_FALSE;
+    }
+
+    auto* data = reinterpret_cast<LottieDrawable::GlData*>(lottie_ptr);
+    auto result = data->resize(
+            reinterpret_cast<void*>(display),
+            reinterpret_cast<void*>(surface),
+            reinterpret_cast<void*>(context),
+            framebuffer_id,
+            width,
+            height);
+    return result ? JNI_TRUE : JNI_FALSE;
+}
+
 extern "C" void
-Java_org_thorvg_core_lottie_LottieNativeBindings_nDrawLottieFrame(JNIEnv* env, jclass clazz,
+Java_org_thorvg_core_lottie_LottieNativeBindings_nDrawSwLottieFrame(JNIEnv* env, jclass clazz,
         jlong lottie_ptr, jobject bitmap, jint frame) {
     if (lottie_ptr == 0) {
         return;
@@ -92,4 +122,15 @@ Java_org_thorvg_core_lottie_LottieNativeBindings_nDrawLottieFrame(JNIEnv* env, j
         data->draw(frame);
         AndroidBitmap_unlockPixels(env, bitmap);
     }
+}
+
+extern "C" void
+Java_org_thorvg_core_lottie_LottieNativeBindings_nDrawGlLottieFrame(JNIEnv* env, jclass clazz,
+        jlong lottie_ptr, jint frame) {
+    if (lottie_ptr == 0) {
+        return;
+    }
+
+    auto* data = reinterpret_cast<LottieDrawable::Data*>(lottie_ptr);
+    data->draw(frame);
 }

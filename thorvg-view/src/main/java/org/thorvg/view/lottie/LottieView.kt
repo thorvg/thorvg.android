@@ -3,23 +3,28 @@ package org.thorvg.view.lottie
 import android.content.Context
 import android.content.res.Resources
 import android.util.AttributeSet
+import android.view.ViewGroup
+import android.widget.FrameLayout
 import androidx.annotation.FloatRange
 import androidx.annotation.RawRes
 import org.thorvg.core.lottie.LottieConstants
 import org.thorvg.view.R
-import org.thorvg.view.ThorVGView
+import org.thorvg.view.lottie.gl.LottieGlView
+import org.thorvg.view.lottie.sw.LottieSwView
 
 /**
- * View-based host for rendering a [LottieDrawable] inside the Android View system.
+ * View-based host for rendering Lottie with a selectable ThorVG renderer.
  */
 class LottieView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyleAttr: Int = 0,
     defStyleRes: Int = 0
-) : ThorVGView(context, attrs, defStyleAttr, defStyleRes) {
+) : FrameLayout(context, attrs, defStyleAttr, defStyleRes) {
+    private var renderView: LottieRenderView? = null
     private var listener: LottieListener? = null
 
+    // attributes
     private var resId = Resources.ID_NULL
     private var repeatCount = 0
     private var repeatMode = LottieConstants.RESTART
@@ -27,9 +32,9 @@ class LottieView @JvmOverloads constructor(
     private var speed = 1f
     private var frameFrom = 0
     private var frameTo: Int? = null
+    private var renderer = Renderer.Sw
 
-    private val lottieDrawable: LottieDrawable?
-        get() = getThorVGDrawable() as? LottieDrawable
+    private var glRenderFailed = false
 
     init {
         val attributes = context.obtainStyledAttributes(
@@ -39,18 +44,34 @@ class LottieView @JvmOverloads constructor(
             defStyleRes
         )
         resId = attributes.getResourceId(R.styleable.LottieView_rawRes, resId)
-        speed = attributes.getFloat(R.styleable.LottieView_speed, speed)
         repeatCount = attributes.getInt(R.styleable.LottieView_android_repeatCount, repeatCount)
         repeatMode = attributes.getInt(R.styleable.LottieView_android_repeatMode, repeatMode)
         autoStart = attributes.getBoolean(R.styleable.LottieView_android_autoStart, autoStart)
+        speed = attributes.getFloat(R.styleable.LottieView_speed, speed)
         frameFrom = attributes.getInt(R.styleable.LottieView_frameFrom, frameFrom)
         frameTo = if (attributes.hasValue(R.styleable.LottieView_frameTo)) {
             attributes.getInt(R.styleable.LottieView_frameTo, 0)
         } else {
             null
         }
+        renderer = rendererFromValue(
+            attributes.getInt(R.styleable.LottieView_renderer, Renderer.Sw.ordinal)
+        )
         attributes.recycle()
+
+        installRenderView(startAfterInstall = false)
     }
+
+    fun setRenderer(renderer: Renderer) {
+        if (this.renderer == renderer) return
+
+        val wasAnimating = isAnimating()
+        this.renderer = renderer
+        glRenderFailed = false
+        installRenderView(startAfterInstall = wasAnimating)
+    }
+
+    fun getRenderer(): Renderer = renderer
 
     /**
      * Replaces the currently bound drawable resource.
@@ -58,7 +79,7 @@ class LottieView @JvmOverloads constructor(
     fun setRawRes(@RawRes resId: Int) {
         if (this.resId != resId) {
             this.resId = resId
-            updateLottieDrawable()
+            renderView?.setRawRes(resId)
         }
     }
 
@@ -73,7 +94,7 @@ class LottieView @JvmOverloads constructor(
      */
     fun setRepeatCount(repeatCount: Int) {
         this.repeatCount = repeatCount
-        lottieDrawable?.repeatCount = repeatCount
+        renderView?.setRepeatCount(repeatCount)
     }
 
     /**
@@ -86,7 +107,7 @@ class LottieView @JvmOverloads constructor(
      */
     fun setRepeatMode(repeatMode: Int) {
         this.repeatMode = repeatMode
-        lottieDrawable?.setRepeatMode(repeatMode)
+        renderView?.setRepeatMode(repeatMode)
     }
 
     /**
@@ -99,6 +120,7 @@ class LottieView @JvmOverloads constructor(
      */
     fun setAutoStart(autoStart: Boolean) {
         this.autoStart = autoStart
+        renderView?.setAutoStart(autoStart)
     }
 
     /**
@@ -111,7 +133,7 @@ class LottieView @JvmOverloads constructor(
      */
     fun setFrameFrom(frameFrom: Int) {
         this.frameFrom = frameFrom
-        lottieDrawable?.setFirstFrame(frameFrom)
+        renderView?.setFrameFrom(frameFrom)
     }
 
     /**
@@ -124,9 +146,7 @@ class LottieView @JvmOverloads constructor(
      */
     fun setFrameTo(frameTo: Int?) {
         this.frameTo = frameTo
-        if (frameTo != null) {
-            lottieDrawable?.setLastFrame(frameTo)
-        }
+        renderView?.setFrameTo(frameTo)
     }
 
     /**
@@ -134,76 +154,53 @@ class LottieView @JvmOverloads constructor(
      */
     fun getFrameTo(): Int? = frameTo
 
-    private fun updateLottieDrawable() {
-        if (!isAttachedToWindow) return
-
-        val drawable = if (resId != Resources.ID_NULL) {
-            LottieDrawable.fromRawResource(context.resources, resId).also(::applyConfig)
-        } else {
-            null
-        }
-        setThorVGDrawable(drawable)
-        if (drawable != null && autoStart) {
-            startAnimation()
-        }
-    }
-
-    private fun applyConfig(drawable: LottieDrawable) {
-        drawable.setAnimationListener(listener)
-        drawable.repeatCount = repeatCount
-        drawable.setRepeatMode(repeatMode)
-        drawable.speed = speed
-        drawable.setFirstFrame(frameFrom)
-        frameTo?.let(drawable::setLastFrame)
-    }
-
     /**
-     * Resizes the underlying drawable buffer in pixels.
+     * Resizes the underlying rendering target in pixels.
      */
     fun setSize(width: Int, height: Int) {
-        lottieDrawable?.setSize(width, height)
+        renderView?.setSize(width, height)
     }
 
     /**
      * Starts playback from the first configured frame.
      */
     fun startAnimation() {
-        lottieDrawable?.start()
+        renderView?.startAnimation()
     }
 
     /**
      * Stops playback and clears scheduled frame updates.
      */
     fun stopAnimation() {
-        lottieDrawable?.stop()
+        renderView?.stopAnimation()
     }
 
     /**
      * Pauses playback without resetting the current frame.
      */
     fun pauseAnimation() {
-        lottieDrawable?.pause()
+        renderView?.pauseAnimation()
     }
 
     /**
      * Resumes playback from the current frame.
      */
     fun resumeAnimation() {
-        lottieDrawable?.resume()
+        renderView?.resumeAnimation()
     }
 
     /**
-     * Returns whether the underlying drawable is actively playing.
+     * Returns whether the active renderer is playing.
      */
     fun isAnimating(): Boolean {
-        return lottieDrawable?.isRunning == true
+        return renderView?.isAnimating() == true
     }
 
     /**
      * Returns the current frame index.
      */
     fun getCurrentFrame(): Int {
-        return lottieDrawable?.currentFrame ?: 0
+        return renderView?.getCurrentFrame() ?: 0
     }
 
     /**
@@ -211,21 +208,14 @@ class LottieView @JvmOverloads constructor(
      */
     fun setSpeed(@FloatRange(from = 0.0) speed: Float) {
         this.speed = speed
-        lottieDrawable?.speed = speed
+        renderView?.setSpeed(speed)
     }
 
     /**
      * Returns the playback speed multiplier.
      */
     fun getSpeed(): Float {
-        return lottieDrawable?.speed ?: 1f
-    }
-
-    override fun onAttachedToWindow() {
-        super.onAttachedToWindow()
-        if (lottieDrawable == null && resId != Resources.ID_NULL) {
-            updateLottieDrawable()
-        }
+        return renderView?.getSpeed() ?: speed
     }
 
     /**
@@ -233,6 +223,75 @@ class LottieView @JvmOverloads constructor(
      */
     fun setAnimationListener(listener: LottieListener?) {
         this.listener = listener
-        lottieDrawable?.setAnimationListener(listener)
+        renderView?.setAnimationListener(listener)
+    }
+
+    private fun installRenderView(startAfterInstall: Boolean): LottieRenderView {
+        return installRenderView(renderViewTypeFor(renderer), startAfterInstall)
+    }
+
+    private fun installRenderView(
+        renderViewType: LottieRenderViewType,
+        startAfterInstall: Boolean
+    ): LottieRenderView {
+        val previousRenderView = renderView
+        previousRenderView?.stopAnimation()
+        previousRenderView?.release()
+        removeAllViews()
+
+        val nextRenderView = when (renderViewType) {
+            LottieRenderViewType.Sw -> LottieSwView(context)
+            LottieRenderViewType.Gl -> createGlRenderView()
+        }
+        renderView = nextRenderView
+        addView(
+            nextRenderView.view,
+            LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
+        )
+        applyConfig(nextRenderView)
+        if (startAfterInstall && isAttachedToWindow) {
+            nextRenderView.startAnimation()
+        }
+        return nextRenderView
+    }
+
+    private fun createGlRenderView(): LottieGlView {
+        val glView = LottieGlView(context)
+        if (renderer == Renderer.Automatic) {
+            glView.setRenderFailureListener { fallbackToSoftware(glView) }
+        }
+        return glView
+    }
+
+    private fun fallbackToSoftware(failedRenderView: LottieRenderView) {
+        if (renderer != Renderer.Automatic || renderView !== failedRenderView) return
+
+        val wasAnimating = failedRenderView.isAnimating()
+        glRenderFailed = true
+        installRenderView(LottieRenderViewType.Sw, startAfterInstall = wasAnimating)
+    }
+
+    private fun applyConfig(renderView: LottieRenderView) {
+        renderView.setAnimationListener(listener)
+        renderView.setRepeatCount(repeatCount)
+        renderView.setRepeatMode(repeatMode)
+        renderView.setAutoStart(autoStart)
+        renderView.setFrameFrom(frameFrom)
+        renderView.setFrameTo(frameTo)
+        renderView.setSpeed(speed)
+        renderView.setRawRes(resId)
+    }
+
+    private fun rendererFromValue(value: Int): Renderer {
+        return Renderer.entries.getOrNull(value) ?: Renderer.Sw
+    }
+
+    private fun renderViewTypeFor(renderer: Renderer): LottieRenderViewType {
+        return when (renderer) {
+            Renderer.Sw -> LottieRenderViewType.Sw
+            Renderer.Gl -> LottieRenderViewType.Gl
+            Renderer.Automatic ->
+                if (glRenderFailed) LottieRenderViewType.Sw else LottieRenderViewType.Gl
+        }
     }
 }

@@ -37,12 +37,25 @@ namespace LottieDrawable {
     class Data {
     public:
         Data(const char* content, uint32_t strLength);
-        ~Data();
-        void setBufferSize(uint32_t* buffer, float width, float height);
+        virtual ~Data();
         void draw(uint32_t frame);
+
         tvg::Animation* mAnimation = nullptr;
-    private:
-        tvg::SwCanvas* mCanvas = nullptr;
+
+    protected:
+        tvg::Canvas* mCanvas = nullptr;
+    };
+
+    class SwData final : public Data {
+    public:
+        SwData(const char* content, uint32_t strLength);
+        bool resize(uint32_t* buffer, float width, float height);
+    };
+
+    class GlData final : public Data {
+    public:
+        GlData(const char* content, uint32_t strLength);
+        bool resize(void* display, void* surface, void* context, int32_t id, float width, float height);
     };
 
 } // namespace LottieDrawable

@@ -25,7 +25,10 @@ if (${ANDROID_ABI} STREQUAL "arm64-v8a" OR ${ANDROID_ABI} STREQUAL "x86_64")
             android
             lib_thorvg
             -ljnigraphics
-	    -fopenmp
-	    -static-openmp
+            EGL
+            GLESv2
+            dl
+            -fopenmp
+            -static-openmp
             log)
 endif()

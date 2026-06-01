@@ -223,6 +223,8 @@ tasks.register('buildThorvg') {
                     environment 'NINJA', ninjaExecutable
                     commandLine mesonExecutable, 'setup', buildDir.absolutePath, nativeThorvgDir.absolutePath,
                             '-Dloaders=svg, lottie, webp, jpg, png',
+                            '-Dengines=cpu, gl',
+                            '-Dextra=opengl_es, lottie_exp, openmp',
                             "--cross-file=${crossFile.absolutePath}",
                             '-Ddefault_library=static',
                             '--backend=ninja'
