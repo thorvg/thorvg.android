@@ -1,6 +1,7 @@
 package org.thorvg.sample
 
 import androidx.activity.compose.BackHandler
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -19,20 +20,35 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.thorvg.sample.compose.LottieComposeSampleContent
 import org.thorvg.sample.compose.SvgComposeSampleContent
+import org.thorvg.sample.multi.LottieMultiSampleContent
 
 @Composable
-@OptIn(ExperimentalMaterial3Api::class)
 internal fun ComposeSampleScreen(
     sampleType: SampleType,
     onNavigateUp: () -> Unit
 ) {
     BackHandler(onBack = onNavigateUp)
 
-    val titleRes = when (sampleType) {
-        SampleType.Lottie -> R.string.sample_compose_title
-        SampleType.Svg -> R.string.sample_svg_title
+    when (sampleType) {
+        // Manages its own chrome: top bar on the config form, fullscreen + immersive while running.
+        SampleType.LottieMulti -> LottieMultiSampleContent(onNavigateUp = onNavigateUp)
+        SampleType.Lottie -> FramedSample(R.string.sample_compose_title, onNavigateUp) {
+            LottieComposeSampleContent(modifier = it)
+        }
+        SampleType.Svg -> FramedSample(R.string.sample_svg_title, onNavigateUp) {
+            SvgComposeSampleContent(modifier = it)
+        }
     }
+}
 
+/** A sample shown inside a top-bar Scaffold; [content] receives the padded content modifier. */
+@Composable
+@OptIn(ExperimentalMaterial3Api::class)
+private fun FramedSample(
+    @StringRes titleRes: Int,
+    onNavigateUp: () -> Unit,
+    content: @Composable (Modifier) -> Unit
+) {
     Scaffold(
         containerColor = Color(0xFFF6F0E8),
         topBar = {
@@ -49,26 +65,12 @@ internal fun ComposeSampleScreen(
             )
         }
     ) { innerPadding ->
-        when (sampleType) {
-            SampleType.Lottie -> {
-                LottieComposeSampleContent(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF6F0E8))
-                        .padding(innerPadding)
-                        .padding(24.dp)
-                )
-            }
-
-            SampleType.Svg -> {
-                SvgComposeSampleContent(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .background(Color(0xFFF6F0E8))
-                        .padding(innerPadding)
-                        .padding(24.dp)
-                )
-            }
-        }
+        content(
+            Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF6F0E8))
+                .padding(innerPadding)
+                .padding(24.dp)
+        )
     }
 }

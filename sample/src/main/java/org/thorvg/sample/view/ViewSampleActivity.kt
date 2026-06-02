@@ -46,6 +46,7 @@ class ViewSampleActivity : AppCompatActivity() {
             when (sampleType) {
                 SampleType.Lottie -> R.string.sample_view_title
                 SampleType.Svg -> R.string.sample_svg_view_title
+                SampleType.LottieMulti -> error("LottieMulti is a Compose sample, not a View sample")
             }
         )
 
@@ -53,6 +54,7 @@ class ViewSampleActivity : AppCompatActivity() {
             val fragment = when (sampleType) {
                 SampleType.Lottie -> LottieViewSampleFragment()
                 SampleType.Svg -> SvgViewSampleFragment()
+                SampleType.LottieMulti -> error("LottieMulti is a Compose sample, not a View sample")
             }
 
             supportFragmentManager.beginTransaction()

@@ -38,6 +38,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -133,6 +134,10 @@ class MainActivity : ComponentActivity() {
                                             )
                                         )
                                     },
+                                    onOpenMultiView = {
+                                        sampleType = SampleType.LottieMulti
+                                        currentScreen = MainScreen.Compose
+                                    },
                                     onOpenSvgView = {
                                         startActivity(
                                             ViewSampleActivity.createIntent(
@@ -165,6 +170,7 @@ private fun HomeScreen(
     onOpenCompose: () -> Unit,
     onOpenSvg: () -> Unit,
     onOpenView: () -> Unit,
+    onOpenMultiView: () -> Unit,
     onOpenSvgView: () -> Unit
 ) {
     SampleMenuLayout(
@@ -186,6 +192,10 @@ private fun HomeScreen(
         MenuButton(
             text = stringResource(R.string.sample_open_svg_view),
             onClick = onOpenSvgView
+        )
+        MultiMenuButton(
+            text = stringResource(R.string.sample_open_multi_view),
+            onClick = onOpenMultiView
         )
     }
 }
@@ -225,6 +235,23 @@ private fun MenuButton(
     Button(
         onClick = onClick,
         modifier = Modifier.fillMaxWidth()
+    ) {
+        Text(text)
+    }
+}
+
+@Composable
+private fun MultiMenuButton(
+    text: String,
+    onClick: () -> Unit
+) {
+    Button(
+        onClick = onClick,
+        modifier = Modifier.fillMaxWidth(),
+        colors = ButtonDefaults.buttonColors(
+            containerColor = Color(0xFF5B5247),
+            contentColor = Color(0xFFF3EFE7)
+        )
     ) {
         Text(text)
     }
