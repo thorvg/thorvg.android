@@ -242,6 +242,7 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
      * Starts playback from [firstFrame].
      */
     override fun start() {
+        handler.removeCallbacks(nextFrameRunnable)
         isRunning = true
         isEnded = false
         isStarted = false
