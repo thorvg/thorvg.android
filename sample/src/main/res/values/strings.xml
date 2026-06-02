@@ -19,4 +19,6 @@
     <string name="sample_idle">Idle</string>
     <string name="sample_frame_format">Frame %1$d</string>
     <string name="sample_speed_format">Speed %1$.1fx</string>
+    <string name="sample_renderer_to_sw">To SW</string>
+    <string name="sample_renderer_to_gl">To GL</string>
 </resources>

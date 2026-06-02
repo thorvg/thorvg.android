@@ -31,8 +31,11 @@ import android.widget.TextView
 import androidx.fragment.app.Fragment
 import org.thorvg.sample.R
 import org.thorvg.view.lottie.LottieView
+import org.thorvg.view.lottie.Renderer
 
-class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) {
+open class LottieViewSampleFragment(
+    layoutResId: Int = R.layout.fragment_lottie_view_sample
+) : Fragment(layoutResId) {
     private val statusHandler = Handler(Looper.getMainLooper())
     private val statusRunnable = object : Runnable {
         override fun run() {
@@ -46,6 +49,7 @@ class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) 
     private var frameText: TextView? = null
     private var speedText: TextView? = null
     private var runningText: TextView? = null
+    private var rendererButton: Button? = null
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
@@ -55,6 +59,7 @@ class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) 
         frameText = view.findViewById(R.id.anim_frame)
         speedText = view.findViewById(R.id.anim_speed)
         runningText = view.findViewById(R.id.anim_running)
+        rendererButton = view.findViewById(R.id.renderer_toggle)
 
         view.findViewById<View>(R.id.anim_state).setOnClickListener {
             val target = lottieView ?: return@setOnClickListener
@@ -91,6 +96,16 @@ class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) 
             updateStatus()
         }
 
+        view.findViewById<View>(R.id.renderer_toggle).setOnClickListener {
+            val target = lottieView ?: return@setOnClickListener
+            val nextRenderer = when (target.getRenderer()) {
+                Renderer.Gl -> Renderer.Sw
+                else -> Renderer.Gl
+            }
+            target.setRenderer(nextRenderer)
+            updateStatus()
+        }
+
         updateStatus()
     }
 
@@ -110,6 +125,7 @@ class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) 
         frameText = null
         speedText = null
         runningText = null
+        rendererButton = null
         super.onDestroyView()
     }
 
@@ -124,6 +140,10 @@ class LottieViewSampleFragment : Fragment(R.layout.fragment_lottie_view_sample) 
         }
         frameText?.text = context.getString(R.string.sample_frame_format, target.getCurrentFrame())
         speedText?.text = context.getString(R.string.sample_speed_format, target.getSpeed())
+        rendererButton?.text = when (target.getRenderer()) {
+            Renderer.Gl -> context.getString(R.string.sample_renderer_to_sw)
+            else -> context.getString(R.string.sample_renderer_to_gl)
+        }
         stateButton?.text = if (isAnimating) {
             context.getString(R.string.sample_pause)
         } else {

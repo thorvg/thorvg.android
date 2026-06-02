@@ -15,6 +15,7 @@
         android:background="@android:color/white"
         android:autoStart="true"
         android:repeatCount="-1"
+        app:renderer="sw"
         app:rawRes="@raw/swinging" />
 
     <LinearLayout
@@ -41,33 +42,47 @@
             android:layout_height="wrap_content" />
     </LinearLayout>
 
-    <LinearLayout
+    <HorizontalScrollView
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="12dp"
-        android:gravity="center"
-        android:orientation="horizontal">
+        android:fillViewport="true"
+        android:scrollbars="none">
 
-        <Button
-            android:id="@+id/anim_state"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:text="@string/sample_pause" />
+            android:gravity="center"
+            android:orientation="horizontal">
 
-        <Button
-            android:id="@+id/anim_stop"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginEnd="12dp"
-            android:text="@string/sample_stop" />
+            <Button
+                android:id="@+id/anim_state"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/sample_pause" />
 
-        <Button
-            android:id="@+id/anim_replay"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="@string/sample_replay" />
-    </LinearLayout>
+            <Button
+                android:id="@+id/anim_stop"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/sample_stop" />
+
+            <Button
+                android:id="@+id/anim_replay"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginEnd="12dp"
+                android:text="@string/sample_replay" />
+
+            <Button
+                android:id="@+id/renderer_toggle"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="@string/sample_renderer_to_gl" />
+        </LinearLayout>
+    </HorizontalScrollView>
 
     <LinearLayout
         android:layout_width="match_parent"
