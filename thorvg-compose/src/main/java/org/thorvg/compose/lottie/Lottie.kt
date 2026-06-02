@@ -236,9 +236,9 @@ fun Lottie(
         }
 
         val resolvedFirstFrame = firstFrame.coerceAtLeast(0)
-        renderState.lastFrame = (lastFrame ?: composition.frameCount)
+        renderState.lastFrame = (lastFrame ?: composition.lastFrame)
             .coerceAtLeast(resolvedFirstFrame)
-            .coerceAtMost(composition.frameCount)
+            .coerceAtMost(composition.lastFrame)
         renderState.firstFrame = resolvedFirstFrame.coerceAtMost(renderState.lastFrame)
         renderState.setCompositionSize(canvasSize.width, canvasSize.height)
 
