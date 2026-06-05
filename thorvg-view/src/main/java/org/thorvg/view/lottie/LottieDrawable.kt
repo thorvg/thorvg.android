@@ -444,7 +444,7 @@ class LottieDrawable internal constructor() : ThorVGDrawable(), Animatable {
             val drawable = LottieDrawable()
             drawable.lottieState.composition = LottieComposition.fromRawResource(resources, resId)
             drawable.lottieState.composition?.let { composition ->
-                drawable.setLastFrame(composition.frameCount)
+                drawable.setLastFrame(composition.lastFrame)
             }
             return drawable
         }
