@@ -49,6 +49,15 @@ class LottieComposition private constructor(
         get() = nativeLottie.frameCount
 
     /**
+     * Last valid frame index that can be rendered.
+     */
+    val lastFrame: Int
+        get() {
+            val count = frameCount
+            return if (count > 0) count - 1 else 0
+        }
+
+    /**
      * Total animation duration in milliseconds.
      */
     val duration: Long
@@ -147,7 +156,7 @@ class LottieRenderState {
     var lastFrame = 0
         set(value) {
             composition?.let {
-                field = value.coerceAtMost(it.frameCount)
+                field = value.coerceAtLeast(0).coerceAtMost(it.lastFrame)
                 updateFrameInterval()
             }
         }
@@ -179,7 +188,7 @@ class LottieRenderState {
 
     protected fun updateFrameInterval() {
         val currentComposition = composition ?: return
-        val totalFrames = lastFrame - firstFrame
+        val totalFrames = lastFrame - firstFrame + 1
         frameInterval = when {
             totalFrames <= 0 -> 0L
             speed <= 0f -> 0L
