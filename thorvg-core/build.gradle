@@ -225,6 +225,7 @@ tasks.register('buildThorvg') {
                             '-Dloaders=svg, lottie, webp, jpg, png',
                             '-Dengines=cpu, gl',
                             '-Dextra=opengl_es, lottie_exp, openmp',
+                            '-Dpartial=false',
                             "--cross-file=${crossFile.absolutePath}",
                             '-Ddefault_library=static',
                             '--backend=ninja'

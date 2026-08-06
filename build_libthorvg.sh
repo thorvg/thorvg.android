@@ -18,7 +18,7 @@ build_one() {
 
     cd "$ROOT_DIR/thorvg"
     rm -rf "$build_dir"
-    meson setup "$build_dir" -Dloaders="lottie, webp, jpg, png" --cross-file "$cross_file" -Ddefault_library=static
+    meson setup "$build_dir" -Dloaders="lottie, webp, jpg, png" -Dpartial=false --cross-file "$cross_file" -Ddefault_library=static
     ninja -C "$build_dir"
 }
 
