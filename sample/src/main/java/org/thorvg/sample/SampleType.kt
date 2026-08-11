@@ -4,5 +4,6 @@ enum class SampleType {
     Lottie,
     Svg,
     VideoPath,
+    VideoData,
     LottieMulti
 }

@@ -20,6 +20,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import org.thorvg.sample.compose.LottieComposeSampleContent
 import org.thorvg.sample.compose.SvgComposeSampleContent
+import org.thorvg.sample.compose.VideoDataComposeSampleContent
 import org.thorvg.sample.compose.VideoPathComposeSampleContent
 import org.thorvg.sample.multi.LottieMultiSampleContent
 
@@ -41,6 +42,9 @@ internal fun ComposeSampleScreen(
         }
         SampleType.VideoPath -> FramedSample(R.string.sample_video_path_title, onNavigateUp) {
             VideoPathComposeSampleContent(modifier = it)
+        }
+        SampleType.VideoData -> FramedSample(R.string.sample_video_data_title, onNavigateUp) {
+            VideoDataComposeSampleContent(modifier = it)
         }
     }
 }

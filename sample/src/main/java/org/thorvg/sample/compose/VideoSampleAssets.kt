@@ -24,3 +24,7 @@ internal suspend fun copySampleVideo(context: Context): String = withContext(Dis
     }
     file.absolutePath
 }
+
+internal suspend fun readSampleVideo(context: Context): ByteArray = withContext(Dispatchers.IO) {
+    context.resources.openRawResource(R.raw.middle_audio).use { it.readBytes() }
+}

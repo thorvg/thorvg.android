@@ -61,6 +61,27 @@ fun VideoPathComposeSampleContent(
 }
 
 @Composable
+fun VideoDataComposeSampleContent(
+    modifier: Modifier = Modifier
+) {
+    val context = LocalContext.current
+    var videoData by remember { mutableStateOf<ByteArray?>(null) }
+
+    LaunchedEffect(context) {
+        videoData = readSampleVideo(context)
+    }
+
+    videoData?.let { data ->
+        key(data) {
+            VideoPlaybackContent(
+                composition = rememberVideoComposition(data, data.size),
+                modifier = modifier
+            )
+        }
+    } ?: PreparingVideo(modifier)
+}
+
+@Composable
 private fun PreparingVideo(modifier: Modifier) {
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Text(

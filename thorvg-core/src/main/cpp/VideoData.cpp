@@ -24,7 +24,17 @@
 
 VideoComposition::Data::Data(const char* path)
 {
-    if (!path) return;
+    load(path, 0);
+}
+
+VideoComposition::Data::Data(const char* data, uint32_t size)
+{
+    load(data, size);
+}
+
+void VideoComposition::Data::load(const char* data, uint32_t size)
+{
+    if (!data) return;
 
     mVideo = tvg::Video::gen();
     if (!mVideo) return;
@@ -36,7 +46,7 @@ VideoComposition::Data::Data(const char* path)
         return;
     }
 
-    auto ret = picture->load(path);
+    auto ret = size > 0 ? picture->load(data, size, "mp4") : picture->load(data);
     if (ret != tvg::Result::Success) {
         delete mVideo;
         mVideo = nullptr;

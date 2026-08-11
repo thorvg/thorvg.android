@@ -5,12 +5,14 @@
     <string name="sample_open_compose">Open Compose Sample</string>
     <string name="sample_open_svg">Open SVG Sample</string>
     <string name="sample_open_video_path">Open Video from Path</string>
+    <string name="sample_open_video_data">Open Video from Data + Size</string>
     <string name="sample_open_view">Open View Sample</string>
     <string name="sample_open_multi_view">Open Multi Sample</string>
     <string name="sample_open_svg_view">Open SVG View Sample</string>
     <string name="sample_compose_title">ThorVG Compose</string>
     <string name="sample_svg_title">ThorVG SVG</string>
     <string name="sample_video_path_title">ThorVG Video · Path</string>
+    <string name="sample_video_data_title">ThorVG Video · Data + Size</string>
     <string name="sample_view_title">ThorVG View</string>
     <string name="sample_multi_title">ThorVG Multi</string>
     <string name="sample_svg_view_title">ThorVG SVG View</string>

@@ -139,12 +139,42 @@ fun rememberVideoComposition(path: String): VideoComposition {
 }
 
 @Composable
+fun rememberVideoComposition(data: ByteArray, size: Int): VideoComposition {
+    val composition = remember(data, size) {
+        VideoComposition(data, size)
+    }
+
+    DisposableEffect(composition) {
+        onDispose {
+            composition.release()
+        }
+    }
+
+    return composition
+}
+
+@Composable
 fun Video(
     path: String,
     modifier: Modifier = Modifier,
     state: VideoState = rememberVideoState()
 ) {
     val composition = rememberVideoComposition(path)
+    VideoContent(
+        composition = composition,
+        modifier = modifier,
+        state = state
+    )
+}
+
+@Composable
+fun Video(
+    data: ByteArray,
+    size: Int,
+    modifier: Modifier = Modifier,
+    state: VideoState = rememberVideoState()
+) {
+    val composition = rememberVideoComposition(data, size)
     VideoContent(
         composition = composition,
         modifier = modifier,

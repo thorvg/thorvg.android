@@ -66,6 +66,25 @@ Java_org_thorvg_core_video_VideoNativeBindings_nCreateVideo(JNIEnv* env, jclass 
     return _create(env, data, out_values);
 }
 
+extern "C" jlong
+Java_org_thorvg_core_video_VideoNativeBindings_nCreateVideoData(JNIEnv* env, jclass clazz,
+        jbyteArray bytes, jint size, jintArray out_values)
+{
+    if (!bytes || size <= 0 || size > env->GetArrayLength(bytes)) return 0;
+
+    if (tvg::Initializer::init(3) != tvg::Result::Success) return 0;
+
+    auto input = env->GetByteArrayElements(bytes, nullptr);
+    if (!input) {
+        tvg::Initializer::term();
+        return 0;
+    }
+
+    auto data = new VideoComposition::Data(reinterpret_cast<const char*>(input), static_cast<uint32_t>(size));
+    env->ReleaseByteArrayElements(bytes, input, JNI_ABORT);
+    return _create(env, data, out_values);
+}
+
 extern "C" void
 Java_org_thorvg_core_video_VideoNativeBindings_nSetVideoBufferSize(JNIEnv* env, jclass clazz,
         jlong video_ptr, jobject bitmap, jfloat width, jfloat height)

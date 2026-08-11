@@ -31,6 +31,7 @@ namespace VideoComposition {
 
     struct Data {
         Data(const char* path);
+        Data(const char* data, uint32_t size);
         ~Data();
         bool valid();
         void setBufferSize(uint32_t* buffer, float width, float height);
@@ -44,6 +45,9 @@ namespace VideoComposition {
         float mFrameDuration = 1.0f / 30.0f;
         float mBufferWidth = 0.0f;
         float mBufferHeight = 0.0f;
+
+    private:
+        void load(const char* data, uint32_t size);
     };
 
 } // namespace VideoComposition

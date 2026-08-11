@@ -11,6 +11,9 @@ object VideoNativeBindings {
     external fun nCreateVideo(path: String?, outValues: IntArray?): Long
 
     @JvmStatic
+    external fun nCreateVideoData(data: ByteArray?, size: Int, outValues: IntArray?): Long
+
+    @JvmStatic
     external fun nSetVideoBufferSize(
         videoPtr: Long,
         bitmap: Bitmap,

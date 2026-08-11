@@ -7,6 +7,7 @@ class VideoComposition private constructor(
     private val nativeVideo: NativeVideo
 ) {
     constructor(path: String) : this(NativeVideo(path))
+    constructor(data: ByteArray, size: Int) : this(NativeVideo(data, size))
 
     val width: Int
         get() = nativeVideo.width
@@ -80,6 +81,12 @@ private class NativeVideo {
     constructor(path: String) {
         val outValues = IntArray(VIDEO_INFO_COUNT)
         nativePtr = VideoNativeBindings.nCreateVideo(path, outValues)
+        update(outValues)
+    }
+
+    constructor(data: ByteArray, size: Int) {
+        val outValues = IntArray(VIDEO_INFO_COUNT)
+        nativePtr = VideoNativeBindings.nCreateVideoData(data, size, outValues)
         update(outValues)
     }
 
