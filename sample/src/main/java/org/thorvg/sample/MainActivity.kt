@@ -126,6 +126,10 @@ class MainActivity : ComponentActivity() {
                                         sampleType = SampleType.Svg
                                         currentScreen = MainScreen.Compose
                                     },
+                                    onOpenVideoPath = {
+                                        sampleType = SampleType.VideoPath
+                                        currentScreen = MainScreen.Compose
+                                    },
                                     onOpenView = {
                                         startActivity(
                                             ViewSampleActivity.createIntent(
@@ -169,6 +173,7 @@ class MainActivity : ComponentActivity() {
 private fun HomeScreen(
     onOpenCompose: () -> Unit,
     onOpenSvg: () -> Unit,
+    onOpenVideoPath: () -> Unit,
     onOpenView: () -> Unit,
     onOpenMultiView: () -> Unit,
     onOpenSvgView: () -> Unit
@@ -184,6 +189,10 @@ private fun HomeScreen(
         MenuButton(
             text = stringResource(R.string.sample_open_svg),
             onClick = onOpenSvg
+        )
+        MenuButton(
+            text = stringResource(R.string.sample_open_video_path),
+            onClick = onOpenVideoPath
         )
         MenuButton(
             text = stringResource(R.string.sample_open_view),

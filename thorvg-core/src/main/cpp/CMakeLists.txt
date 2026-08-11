@@ -16,15 +16,24 @@ if (${ANDROID_ABI} STREQUAL "arm64-v8a" OR ${ANDROID_ABI} STREQUAL "x86_64")
             lottie-libs.cpp
             LottieData.cpp
             svg-libs.cpp
-            SvgData.cpp)
+            SvgData.cpp
+            video-libs.cpp
+            VideoData.cpp)
+
+    target_link_options(lottie-libs PRIVATE
+            "-Wl,-z,max-page-size=16384"
+            "-Wl,-z,common-page-size=16384")
 
     target_include_directories(lottie-libs PRIVATE
-            ${THORVG_DIR}/inc)
+            ${THORVG_DIR}/inc
+            ${THORVG_DIR}/src/loaders/media)
 
     target_link_libraries(lottie-libs
             android
             lib_thorvg
             -ljnigraphics
+            mediandk
+            OpenSLES
             EGL
             GLESv2
             dl
