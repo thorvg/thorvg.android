@@ -6,11 +6,10 @@ For definitions and responsibilities of each project role, see [Roles & Responsi
 - Hermet Park @hermet
 
 ## Maintainer
-- None
+- SoonGeon Noh @Nor-s
 
 ## Core Contributor
 - YouJin Lee @ol-of
-- SoonGeon Noh @Nor-s
 
 ## Contributors
 - HyunWoo Lee @l2hyunwoo
